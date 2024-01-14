@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 import gc
 import os
 import sys
@@ -15,9 +12,9 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from logdeep.dataset.log import log_dataset
-from logdeep.dataset.sample import sliding_window, session_window
-from logdeep.tools.utils import (save_parameters, seed_everything, train_val_split)
+from deeplog.dataset.log import log_dataset
+from deeplog.dataset.sample import sliding_window, session_window
+from deeplog.tools.utils import (save_parameters, seed_everything, train_val_split)
 
 
 class Trainer:
@@ -213,9 +210,11 @@ class Trainer:
                                  save_optimizer=False,
                                  suffix="bestloss")
 
-    # 开始训练
     def start_train(self):
-        # 0 ~
+        """
+        训练
+        随迭代调整学习率
+        """
         for epoch in range(self.start_epoch, self.max_epoch):
             if epoch == 0:
                 self.optimizer.param_groups[0]['lr'] /= 32
@@ -237,13 +236,13 @@ class Trainer:
         # 绘制学习率变化曲线
         plt.plot(self.log['train']['epoch'], self.log['train']['lr'], 'r-')
         ax1 = plt.gca()
-        ax1.set_title('学习率变化曲线')
+        ax1.set_title('Learning Rate')
         ax1.set_xlabel('Epoch')
         ax1.set_ylabel('Learning Rate')
         plt.show()
         # loss曲线
         plt.plot(self.log['train']['epoch'], self.log['train']['loss'], 'r-', )
-        plt.title('训练损失曲线')
+        plt.title('Loss')
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
         plt.show()

@@ -1,14 +1,13 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+
 
 import argparse
 import sys
 sys.path.append('../')
 
-from logdeep.models.lstm import DeepLog, LogAnomaly, RobustLog
-from logdeep.tools.predict import Predictor
-from logdeep.tools.train import Trainer
-from logdeep.tools.utils import *
+from deeplog.models.lstm import DeepLog, LogAnomaly, RobustLog
+from deeplog.tools.predict import Predictor
+from deeplog.tools.train import Trainer
+from deeplog.tools.utils import *
 
 
 # Config Parameters
