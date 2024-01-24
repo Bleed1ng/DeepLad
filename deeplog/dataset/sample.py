@@ -22,7 +22,7 @@ def trp(l, n):
     return r
 
 
-# 上采样
+# 下采样
 def down_sample(logs, labels, sample_ratio):
     print('sampling...')
     total_num = len(labels)
@@ -57,19 +57,6 @@ def sliding_window(data_dir, datatype, window_size, sample_ratio=1):
         dict: 包含采样日志的字典。
         list: 包含对应于采样日志的标签的列表。
 
-        该函数首先读取一个包含事件到其语义向量的映射的JSON文件。
-        然后初始化会话数、结果日志和标签。
-        根据数据类型，它将适当的文件路径附加到数据目录。
-        然后打开文件并读取每一行。
-        对于每一行，它增加会话数并将行转换为整数元组。
-        然后在行上执行滑动窗口采样。
-        对于每个窗口，它创建一个顺序模式、一个定量模式和一个语义模式。
-        顺序模式是窗口中的事件列表。
-        定量模式是窗口中每个事件的计数列表。
-        语义模式是每个事件对应的语义向量的列表。
-        然后将模式附加到结果日志，将窗口后的下一个事件的标签附加到标签。
-        如果采样比率不是1，那么它在结果日志和标签上执行下采样。
-        最后，它打印会话数和序列数，并返回结果日志和标签。
         """
     event2semantic_vec = read_json(data_dir + 'hdfs/event2semantic_vec.json')
     num_sessions = 0

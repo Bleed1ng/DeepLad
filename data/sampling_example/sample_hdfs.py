@@ -1,3 +1,4 @@
+import ast
 import os
 import re
 import numpy as np
@@ -7,7 +8,7 @@ from collections import OrderedDict
 
 def hdfs_sampling(log_file, window='session', window_size=0):
     """
-        对HDFS日志文件进行采样
+        对HDFS日志文件进行会话窗口采样
         把解析后的日志文件转换成序列数据
 
         参数:
@@ -18,7 +19,7 @@ def hdfs_sampling(log_file, window='session', window_size=0):
         返回:
             None
         """
-    assert window == 'session', 'Only window=session is supported for HDFS dataset.'
+    assert window == 'session', 'Only window=session is supported for HDFS dataset. HDFS数据集仅适用于会话窗口采样。'
     print("Loading", log_file)
     struct_log = pd.read_csv(log_file, engine='c', na_filter=False, memory_map=True)
     data_dict = OrderedDict()
@@ -29,11 +30,17 @@ def hdfs_sampling(log_file, window='session', window_size=0):
         blk_id_set = set(blk_id_list)
         for blk_id in blk_id_set:
             if blk_id not in data_dict:
-                data_dict[blk_id] = []
-            data_dict[blk_id].append(row['EventId'])
-    data_df = pd.DataFrame(list(data_dict.items()), columns=['BlockId', 'EventSequence'])
-    data_df.to_csv('hdfs/HDFS_sequence.csv', index=None)
+                data_dict[blk_id] = {'EventIdList': [], 'ParameterList': []}
+            data_dict[blk_id]['EventIdList'].append(row['EventId'])
+            timestamp = str(row['Date']) + str(row['Time'])
+            param_list = ast.literal_eval(row['ParameterList'])
+            param_list = [timestamp] + param_list
+            data_dict[blk_id]['ParameterList'].append(param_list)
+
+    data_df = pd.DataFrame.from_dict(data_dict, orient='index').reset_index()
+    data_df.columns = ['BlockId', 'EventIdList', 'ParameterList']
+    data_df.to_csv('hdfs/HDFS_2k_sequence.csv', index=None)
 
 
-# hdfs_sampling('../logs_dataset/HDFS/HDFS_2k.log_structured.csv')
-hdfs_sampling('hdfs/HDFS_100k.log_structured.csv')
+hdfs_sampling('../sampling_example/hdfs/HDFS_2k.log_structured.csv')
+# hdfs_sampling('data/sampling_example/hdfs/HDFS_100k.log_structured.csv')
