@@ -9,7 +9,10 @@ from collections import OrderedDict
 def hdfs_sampling(log_file, window='session', window_size=0):
     """
         对HDFS日志文件进行会话窗口采样
-        把解析后的日志文件转换成序列数据
+        把解析后的日志文件转换成序列数据，(BlockId, LogKeyList, ParamVecList) 三列的形式。
+
+        e.g.:
+        blk_-8775602795571523802, "['E7', 'E7']", "[['81110103321', 'blk_-8775602795571523802', 'mnt/hadoop/dfs/data/xxx'], ['81110103403', 'blk_-8775602795571523802', 'mnt/hadoop/dfs/xxx']]"
 
         参数:
             log_file (str): 日志文件的路径
@@ -39,8 +42,8 @@ def hdfs_sampling(log_file, window='session', window_size=0):
 
     data_df = pd.DataFrame.from_dict(data_dict, orient='index').reset_index()
     data_df.columns = ['BlockId', 'EventIdList', 'ParameterList']
-    data_df.to_csv('hdfs/HDFS_2k_sequence.csv', index=None)
+    data_df.to_csv('log_key_seq/HDFS_100k_sequence.csv', index=None)
 
 
-hdfs_sampling('../sampling_example/hdfs/HDFS_2k.log_structured.csv')
-# hdfs_sampling('data/sampling_example/hdfs/HDFS_100k.log_structured.csv')
+# hdfs_sampling('../sampling_example/log_key_seq/HDFS_2k.log_structured.csv')
+hdfs_sampling('../sampling_example/hdfs/HDFS_100k.log_structured.csv')

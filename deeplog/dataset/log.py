@@ -23,19 +23,16 @@ class log_dataset(Dataset):
     def __getitem__(self, idx):
         log = dict()
         if self.seq:
-            log['Sequentials'] = torch.tensor(self.Sequentials[idx],
-                                              dtype=torch.float)
+            log['Sequentials'] = torch.tensor(self.Sequentials[idx], dtype=torch.float)
         if self.quan:
-            log['Quantitatives'] = torch.tensor(self.Quantitatives[idx],
-                                                dtype=torch.float)
+            log['Quantitatives'] = torch.tensor(self.Quantitatives[idx], dtype=torch.float)
         if self.sem:
-            log['Semantics'] = torch.tensor(self.Semantics[idx],
-                                            dtype=torch.float)
+            log['Semantics'] = torch.tensor(self.Semantics[idx], dtype=torch.float)
         return log, self.labels[idx]
 
 
 if __name__ == '__main__':
-    data_dir = '../../data/hdfs/hdfs_train'
+    data_dir = '../../data/log_key_seq/hdfs_train'
     window_size = 10
     train_logs = prepare_log(data_dir=data_dir,
                              datatype='train',

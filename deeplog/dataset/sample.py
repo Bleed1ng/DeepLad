@@ -1,3 +1,4 @@
+import ast
 import json
 from collections import Counter
 
@@ -45,7 +46,8 @@ def down_sample(logs, labels, sample_ratio):
 # 滑动窗口采样
 def sliding_window(data_dir, datatype, window_size, sample_ratio=1):
     """
-        在提供的日志上执行滑动窗口采样。
+        对日志键序列进行滑动窗口采样。
+        result_logs: 5 5 5 22 11 9 11 9 11 9 ——> label: 26
 
         参数:
         data_dir (str): 数据文件所在的目录。
@@ -58,14 +60,14 @@ def sliding_window(data_dir, datatype, window_size, sample_ratio=1):
         list: 包含对应于采样日志的标签的列表。
 
         """
-    event2semantic_vec = read_json(data_dir + 'hdfs/event2semantic_vec.json')
+    event2semantic_vec = read_json(data_dir + 'log_key_seq/event2semantic_vec.json')
     num_sessions = 0
     result_logs = {'Sequentials': [], 'Quantitatives': [], 'Semantics': []}
     labels = []
     if datatype == 'train':
-        data_dir += 'hdfs/hdfs_train'
+        data_dir += 'log_key_seq/hdfs_train_small'
     if datatype == 'val':
-        data_dir += 'hdfs/hdfs_test_normal'
+        data_dir += 'log_key_seq/hdfs_test_normal'
 
     with open(data_dir, 'r') as f:
         for line in f.readlines():
@@ -104,16 +106,16 @@ def sliding_window(data_dir, datatype, window_size, sample_ratio=1):
 
 # 会话窗口采样
 def session_window(data_dir, datatype, sample_ratio=1):
-    event2semantic_vec = read_json(data_dir + 'hdfs/event2semantic_vec.json')
+    event2semantic_vec = read_json(data_dir + 'log_key_seq/event2semantic_vec.json')
     result_logs = {'Sequentials': [], 'Quantitatives': [], 'Semantics': []}
     labels = []
 
     if datatype == 'train':
-        data_dir += 'hdfs/robust_log_train.csv'
+        data_dir += 'log_key_seq/robust_log_train.csv'
     elif datatype == 'val':
-        data_dir += 'hdfs/robust_log_valid.csv'
+        data_dir += 'log_key_seq/robust_log_valid.csv'
     elif datatype == 'test':
-        data_dir += 'hdfs/robust_log_test.csv'
+        data_dir += 'log_key_seq/robust_log_test.csv'
 
     train_df = pd.read_csv(data_dir)
     for i in tqdm(range(len(train_df))):
@@ -147,3 +149,52 @@ def session_window(data_dir, datatype, sample_ratio=1):
 
     print('Number of sessions({}): {}'.format(data_dir, len(result_logs['Semantics'])))
     return result_logs, labels
+
+
+# 对参数值向量数据进行滑动窗口采样
+def sliding_window_param(data_dir, datatype, window_size, sample_ratio=1):
+    """
+        对参数值向量数据进行滑动窗口采样。
+        param_vec_list: [[123, fsd, fw], [124, ffd, gfd], [132, 1ds, fds3]] ——> label: [135, fdsa, gre]
+
+        参数:
+        data_dir (str): 数据文件所在的目录。
+        datatype (str): 要处理的数据类型。可以是 'train' 或 'val'。
+        window_size (int): 滑动窗口的大小。
+        sample_ratio (float, 可选): 应采样的总日志数的比例。默认为1。
+
+        返回:
+        dict: 包含采样日志的字典。
+        list: 包含对应于采样日志的标签的列表。
+
+    """
+    num_sessions = 0
+    result_logs = {'ParamVecList': []}
+    labels = []
+    if datatype == 'train':
+        data_dir += 'sampling_example/log_key_seq/HDFS_2k_sequence.csv'
+    if datatype == 'val':
+        data_dir += 'log_key_seq/hdfs_test_normal'
+
+    # 从csv文件中读取数据，取第三列的参数值向量列表，并转化为实际的list类型
+    df = pd.read_csv(data_dir)
+    param_vec_list = df.iloc[:, 2].apply(ast.literal_eval)
+
+    for line in tqdm(param_vec_list):
+        num_sessions += 1
+        for i in range(len(line) - window_size):
+            current_param_vec = list(line[i:i + window_size])
+            current_param_vec = np.array(current_param_vec)[:, np.newaxis]
+            result_logs['ParamVecList'].append(current_param_vec)
+            # 把窗口之后的下一个日志键作为标签
+            labels.append(line[i + window_size])
+
+    if sample_ratio != 1:
+        result_logs, labels = down_sample(result_logs, labels, sample_ratio)
+
+    print('File {}, number of sessions {}'.format(data_dir, num_sessions))
+    print('File {}, number of seqs {}'.format(data_dir, len(result_logs['ParamVecList'])))
+
+    return result_logs, labels
+
+# a = sliding_window_param(data_dir='../../data/', datatype='train', window_size=10, sample_ratio=1)
