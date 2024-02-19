@@ -14,9 +14,9 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from deeplog.dataset.log import log_dataset
-from deeplog.dataset.sample import session_window
-from deeplog.tools.utils import (save_parameters, seed_everything, train_val_split)
+from dataset.log import log_dataset
+from dataset.sample import session_window
+from tools.utils import (save_parameters, seed_everything, train_val_split)
 
 
 def generate(name):

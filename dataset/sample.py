@@ -65,7 +65,7 @@ def sliding_window(data_dir, datatype, window_size, sample_ratio=1):
     result_logs = {'Sequentials': [], 'Quantitatives': [], 'Semantics': []}
     labels = []
     if datatype == 'train':
-        data_dir += 'log_key_seq/hdfs_train_small'
+        data_dir += 'log_key_seq/hdfs_train'
     if datatype == 'val':
         data_dir += 'log_key_seq/hdfs_test_normal'
 

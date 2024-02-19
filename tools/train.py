@@ -12,9 +12,9 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from deeplog.dataset.log import log_dataset
-from deeplog.dataset.sample import sliding_window, session_window
-from deeplog.tools.utils import (save_parameters, seed_everything, train_val_split)
+from dataset.log import log_dataset
+from dataset.sample import sliding_window, session_window
+from tools.utils import (save_parameters, seed_everything, train_val_split)
 
 
 class Trainer:
@@ -206,9 +206,7 @@ class Trainer:
         # 保存最优模型
         if total_losses / num_batch < self.best_loss:
             self.best_loss = total_losses / num_batch
-            self.save_checkpoint(epoch,
-                                 save_optimizer=False,
-                                 suffix="bestloss")
+            self.save_checkpoint(epoch, save_optimizer=False, suffix="bestloss")
 
     def start_train(self):
         """
@@ -227,9 +225,7 @@ class Trainer:
 
             if epoch >= self.max_epoch // 2 and epoch % 2 == 0:
                 self.valid(epoch)
-                self.save_checkpoint(epoch,
-                                     save_optimizer=True,
-                                     suffix="epoch" + str(epoch))
+                self.save_checkpoint(epoch, save_optimizer=True, suffix="epoch" + str(epoch))
             self.save_checkpoint(epoch, save_optimizer=True, suffix="last")
             self.save_log()
 

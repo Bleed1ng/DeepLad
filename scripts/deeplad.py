@@ -3,10 +3,10 @@ import sys
 
 sys.path.append('../')
 
-from deeplog.models.lstm import DeepLog, LogAnomaly, RobustLog
-from deeplog.tools.predict import Predictor
-from deeplog.tools.train import Trainer
-from deeplog.tools.utils import *
+from models.lstm import DeepLog, LogAnomaly, RobustLog
+from tools.predict import Predictor
+from tools.train import Trainer
+from tools.utils import *
 
 # Deeplog - Parameter Value Anomaly Detection model 参数值异常检测模型参数
 
