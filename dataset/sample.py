@@ -43,7 +43,7 @@ def down_sample(logs, labels, sample_ratio):
     return sample_logs, sample_labels
 
 
-# 滑动窗口采样
+# 滑动窗口采样(deeplog、loganomaly)
 def sliding_window(data_dir, datatype, window_size, sample_ratio=1):
     """
         对日志键序列进行滑动窗口采样。
@@ -104,7 +104,7 @@ def sliding_window(data_dir, datatype, window_size, sample_ratio=1):
     return result_logs, labels
 
 
-# 会话窗口采样
+# 会话窗口采样(robuslog)
 def session_window(data_dir, datatype, sample_ratio=1):
     event2semantic_vec = read_json(data_dir + 'log_key_seq/event2semantic_vec.json')
     result_logs = {'Sequentials': [], 'Quantitatives': [], 'Semantics': []}

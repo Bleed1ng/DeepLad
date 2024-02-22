@@ -1,15 +1,12 @@
-
-
 import argparse
 import sys
+
+from models.lstm import DeepLog, LogAnomaly, RobustLog
+from tools.predict import Predictor
+from tools.train import Trainer
+from tools.utils import *
+
 sys.path.append('../')
-
-from deeplog.models.lstm import DeepLog, LogAnomaly, RobustLog
-from deeplog.tools.predict import Predictor
-from deeplog.tools.train import Trainer
-from deeplog.tools.utils import *
-
-
 # Config Parameters
 
 options = dict()
@@ -25,8 +22,7 @@ options['window_size'] = -1
 options['sequentials'] = False
 options['quantitatives'] = False
 options['semantics'] = True
-options['feature_num'] = sum(
-    [options['sequentials'], options['quantitatives'], options['semantics']])
+options['feature_num'] = sum([options['sequentials'], options['quantitatives'], options['semantics']])
 
 # Model
 options['input_size'] = 300

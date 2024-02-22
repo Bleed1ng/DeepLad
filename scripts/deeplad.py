@@ -44,11 +44,11 @@ options['lr_step'] = (300, 350)
 options['lr_decay_ratio'] = 0.1
 
 options['resume_path'] = None
-options['model_name'] = "deeplad"  # 模型名称前缀
+options['model_name'] = "deeplog"  # 模型名称前缀
 options['save_dir'] = "../result/deeplog/"
 
 # Predict
-options['model_path'] = "../result/deeplog/deeplad.pth"
+options['model_path'] = "../result/deeplog/deeplog.pth"
 options['num_candidates'] = 9  # 预测结果中候选日志键的数量 ====================================
 
 seed_everything(seed=1234)

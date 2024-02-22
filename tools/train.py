@@ -235,10 +235,12 @@ class Trainer:
         ax1.set_title('Learning Rate')
         ax1.set_xlabel('Epoch')
         ax1.set_ylabel('Learning Rate')
+        plt.savefig(self.save_dir + 'learning_rate.png')
         plt.show()
         # loss曲线
         plt.plot(self.log['train']['epoch'], self.log['train']['loss'], 'r-', )
         plt.title('Loss')
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
+        plt.savefig(self.save_dir + 'loss.png')
         plt.show()
