@@ -4,7 +4,7 @@ import sys
 import time
 from collections import Counter
 
-sys.path.append('../../')
+sys.path.append('../')
 
 import numpy as np
 import pandas as pd
@@ -19,6 +19,7 @@ from dataset.sample import session_window
 from tools.utils import (save_parameters, seed_everything, train_val_split)
 
 
+# 去重，统计每种序列出现的次数，并且用-1填充长度不够的序列
 def generate(name):
     window_size = 10
     hdfs = {}
@@ -26,6 +27,7 @@ def generate(name):
     with open('../data/log_key_seq/' + name, 'r') as f:
         for ln in f.readlines():
             ln = list(map(lambda n: n - 1, map(int, ln.strip().split())))
+            # 如果列表的长度小于window_size + 1，则在列表的末尾添加 - 1，直到其长度达到window_size + 1。
             ln = ln + [-1] * (window_size + 1 - len(ln))
             hdfs[tuple(ln)] = hdfs.get(tuple(ln), 0) + 1
             length += 1
@@ -50,55 +52,69 @@ class Predictor():
 
     def predict_unsupervised(self):
         model = self.model.to(self.device)
-        model.load_state_dict(torch.load(self.model_path)['state_dict'])
-        model.eval()
+        model.load_state_dict(torch.load(self.model_path)['state_dict'])  # 加载模型参数
+        model.eval()  # 设置模型为评估模式
         print('model_path: {}'.format(self.model_path))
         test_normal_loader, test_normal_length = generate('hdfs_test_normal')
         test_abnormal_loader, test_abnormal_length = generate('hdfs_test_abnormal')
-        TP = 0
-        FP = 0
+        TP = 0  # true positive
+        FP = 0  # false positive
         # Test the model
         start_time = time.time()
         with torch.no_grad():
+            # 去重后遍历每种序列，避免对相同的序列重复预测
             for line in tqdm(test_normal_loader.keys()):
                 for i in range(len(line) - self.window_size):
-                    seq0 = line[i:i + self.window_size]
-                    label = line[i + self.window_size]
+                    seq0 = line[i:i + self.window_size]  # 取出窗口大小的序列
+                    label = line[i + self.window_size]  # 取出窗口后的标签
                     seq1 = [0] * 28
-                    log_conuter = Counter(seq0)
-                    for key in log_conuter:
-                        seq1[key] = log_conuter[key]
+                    log_counter = Counter(seq0)
+                    for key in log_counter:
+                        seq1[key] = log_counter[key]
 
-                    seq0 = torch.tensor(seq0, dtype=torch.float).view(
-                        -1, self.window_size, self.input_size).to(self.device)
-                    seq1 = torch.tensor(seq1, dtype=torch.float).view(
-                        -1, self.num_classes, self.input_size).to(self.device)
+                    seq0 = (
+                        torch.tensor(seq0, dtype=torch.float)
+                        .view(-1, self.window_size, self.input_size)
+                        .to(self.device)
+                    )
+                    seq1 = (
+                        torch.tensor(seq1, dtype=torch.float)
+                        .view(-1, self.num_classes, self.input_size)
+                        .to(self.device)
+                    )
                     label = torch.tensor(label).view(-1).to(self.device)
                     output = model(features=[seq0, seq1], device=self.device)
-                    predicted = torch.argsort(output,
-                                              1)[0][-self.num_candidates:]
+                    predicted = torch.argsort(output, 1)[0][-self.num_candidates:]
                     if label not in predicted:
+                        # 预测为异常日志（Positive）,实际为正常日志（N），预测结果错误（F），为假阳性（FP）
                         FP += test_normal_loader[line]
                         break
+
         with torch.no_grad():
             for line in tqdm(test_abnormal_loader.keys()):
                 for i in range(len(line) - self.window_size):
                     seq0 = line[i:i + self.window_size]
                     label = line[i + self.window_size]
                     seq1 = [0] * 28
-                    log_conuter = Counter(seq0)
-                    for key in log_conuter:
-                        seq1[key] = log_conuter[key]
+                    log_counter = Counter(seq0)
+                    for key in log_counter:
+                        seq1[key] = log_counter[key]
 
-                    seq0 = torch.tensor(seq0, dtype=torch.float).view(
-                        -1, self.window_size, self.input_size).to(self.device)
-                    seq1 = torch.tensor(seq1, dtype=torch.float).view(
-                        -1, self.num_classes, self.input_size).to(self.device)
+                    seq0 = (
+                        torch.tensor(seq0, dtype=torch.float)
+                        .view(-1, self.window_size, self.input_size)
+                        .to(self.device)
+                    )
+                    seq1 = (
+                        torch.tensor(seq1, dtype=torch.float)
+                        .view(-1, self.num_classes, self.input_size)
+                        .to(self.device)
+                    )
                     label = torch.tensor(label).view(-1).to(self.device)
                     output = model(features=[seq0, seq1], device=self.device)
-                    predicted = torch.argsort(output,
-                                              1)[0][-self.num_candidates:]
+                    predicted = torch.argsort(output, 1)[0][-self.num_candidates:]
                     if label not in predicted:
+                        # 预测为异常日志（Positive）,实际为异常日志（P），预测结果正确（T），为真阳性（TP）
                         TP += test_abnormal_loader[line]
                         break
 
@@ -108,8 +124,10 @@ class Predictor():
         R = 100 * TP / (TP + FN)
         F1 = 2 * P * R / (P + R)
         print(
-            'false positive (FP): {}, false negative (FN): {}, Precision: {:.3f}%, Recall: {:.3f}%, F1-measure: {:.3f}%'
-            .format(FP, FN, P, R, F1))
+            'true positive (TP): {}, false positive (FP): {}, false negative (FN): {}, '
+            'Precision: {:.3f}%, Recall: {:.3f}%, F1-measure: {:.3f}%'
+            .format(TP, FP, FN, P, R, F1)
+        )
         print('Finished Predicting')
         elapsed_time = time.time() - start_time
         print('elapsed_time: {}'.format(elapsed_time))
@@ -148,5 +166,7 @@ class Predictor():
         R = 100 * TP / (TP + FN)
         F1 = 2 * P * R / (P + R)
         print(
-            'false positive (FP): {}, false negative (FN): {}, Precision: {:.3f}%, Recall: {:.3f}%, F1-measure: {:.3f}%'
-            .format(FP, FN, P, R, F1))
+            'true positive (TP): {}, true negative (TN): {}, false positive (FP): {}, false negative (FN): {}, '
+            'Precision: {:.3f}%, Recall: {:.3f}%, F1-measure: {:.3f}%'
+            .format(TP, TN, FP, FN, P, R, F1)
+        )
