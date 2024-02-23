@@ -60,14 +60,14 @@ def sliding_window(data_dir, datatype, window_size, sample_ratio=1):
         list: 包含对应于采样日志的标签的列表。
 
         """
-    event2semantic_vec = read_json(data_dir + 'log_key_seq/event2semantic_vec.json')
+    event2semantic_vec = read_json(data_dir + 'HDFS/event2semantic_vec.json')
     num_sessions = 0
     result_logs = {'Sequentials': [], 'Quantitatives': [], 'Semantics': []}
     labels = []
     if datatype == 'train':
-        data_dir += 'log_key_seq/hdfs_train'
+        data_dir += 'HDFS/hdfs_train'
     if datatype == 'val':
-        data_dir += 'log_key_seq/hdfs_test_normal'
+        data_dir += 'HDFS/hdfs_test_normal'
 
     with open(data_dir, 'r') as f:
         for line in f.readlines():
@@ -106,16 +106,16 @@ def sliding_window(data_dir, datatype, window_size, sample_ratio=1):
 
 # 会话窗口采样(robuslog)
 def session_window(data_dir, datatype, sample_ratio=1):
-    event2semantic_vec = read_json(data_dir + 'log_key_seq/event2semantic_vec.json')
+    event2semantic_vec = read_json(data_dir + 'HDFS/event2semantic_vec.json')
     result_logs = {'Sequentials': [], 'Quantitatives': [], 'Semantics': []}
     labels = []
 
     if datatype == 'train':
-        data_dir += 'log_key_seq/robust_log_train.csv'
+        data_dir += 'HDFS/robust_log_train.csv'
     elif datatype == 'val':
-        data_dir += 'log_key_seq/robust_log_valid.csv'
+        data_dir += 'HDFS/robust_log_valid.csv'
     elif datatype == 'test':
-        data_dir += 'log_key_seq/robust_log_test.csv'
+        data_dir += 'HDFS/robust_log_test.csv'
 
     train_df = pd.read_csv(data_dir)
     for i in tqdm(range(len(train_df))):
@@ -172,9 +172,9 @@ def sliding_window_param(data_dir, datatype, window_size, sample_ratio=1):
     result_logs = {'ParamVecList': []}
     labels = []
     if datatype == 'train':
-        data_dir += 'sampling_example/log_key_seq/HDFS_2k_sequence.csv'
+        data_dir += 'sampling_example/HDFS/HDFS_2k_sequence.csv'
     if datatype == 'val':
-        data_dir += 'log_key_seq/hdfs_test_normal'
+        data_dir += 'HDFS/hdfs_test_normal'
 
     # 从csv文件中读取数据，取第三列的参数值向量列表，并转化为实际的list类型
     df = pd.read_csv(data_dir)

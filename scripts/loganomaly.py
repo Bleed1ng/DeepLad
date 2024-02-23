@@ -47,7 +47,7 @@ options['model_name'] = "loganomaly"
 options['save_dir'] = "../result/loganomaly/"
 
 # Predict
-options['model_path'] = "../result/loganomaly/loganomaly_epoch299.pth"
+options['model_path'] = "../result/loganomaly/loganomaly_last.pth"
 options['num_candidates'] = 9
 
 seed_everything(seed=1234)

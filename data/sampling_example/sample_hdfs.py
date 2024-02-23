@@ -22,7 +22,7 @@ def hdfs_sampling(log_file, window='session', window_size=0):
         返回:
             None
         """
-    assert window == 'session', 'Only window=session is supported for HDFS dataset. HDFS数据集仅适用于会话窗口采样。'
+    assert window == 'session', 'Only window=session is supported for HDFS_2k dataset. HDFS数据集仅适用于会话窗口采样。'
     print("Loading", log_file)
     struct_log = pd.read_csv(log_file, engine='c', na_filter=False, memory_map=True)
     data_dict = OrderedDict()
@@ -42,8 +42,8 @@ def hdfs_sampling(log_file, window='session', window_size=0):
 
     data_df = pd.DataFrame.from_dict(data_dict, orient='index').reset_index()
     data_df.columns = ['BlockId', 'EventIdList', 'ParameterList']
-    data_df.to_csv('log_key_seq/HDFS_100k_sequence.csv', index=None)
+    data_df.to_csv('HDFS/HDFS_100k_sequence.csv', index=None)
 
 
-# hdfs_sampling('../sampling_example/log_key_seq/HDFS_2k.log_structured.csv')
+# hdfs_sampling('../sampling_example/HDFS/HDFS_2k.log_structured.csv')
 hdfs_sampling('../sampling_example/hdfs/HDFS_100k.log_structured.csv')

@@ -24,7 +24,7 @@ def generate(name):
     window_size = 10
     hdfs = {}
     length = 0
-    with open('../data/log_key_seq/' + name, 'r') as f:
+    with open('../data/HDFS/' + name, 'r') as f:
         for ln in f.readlines():
             ln = list(map(lambda n: n - 1, map(int, ln.strip().split())))
             # 如果列表的长度小于window_size + 1，则在列表的末尾添加 - 1，直到其长度达到window_size + 1。

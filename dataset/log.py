@@ -32,7 +32,7 @@ class log_dataset(Dataset):
 
 
 if __name__ == '__main__':
-    data_dir = '../../data/log_key_seq/hdfs_train'
+    data_dir = '../../data/HDFS/hdfs_train'
     window_size = 10
     train_logs = prepare_log(data_dir=data_dir,
                              datatype='train',
