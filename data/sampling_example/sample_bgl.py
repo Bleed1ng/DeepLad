@@ -2,21 +2,21 @@ import os
 import pandas as pd
 import numpy as np
 
+# window_size：每个滑动窗口的持续时间，单位是小时。0.5意味着每个窗口的持续时间是半小时，也就是30分钟。
+# step_size：滑动窗口移动的步长，单位是小时。0.2意味着每次窗口向前移动0.2小时，也就是12分钟。
 para = {"window_size": 0.5, "step_size": 0.2, "structured_file": "bgl/BGL_100k_structured.csv",
         "BGL_sequence": 'bgl/BGL_sequence.csv'}
 
 
 def load_BGL():
     structured_file = para["structured_file"]
-    # load data
     bgl_structured = pd.read_csv(structured_file)
-    # convert to data time format
     bgl_structured["time"] = pd.to_datetime(bgl_structured["time"], format="%Y-%m-%d-%H.%M.%S.%f")
-    # calculate the time interval since the start time
+    # 计算每条日志的时间与第一条日志的时间差
     bgl_structured["seconds_since"] = (
             bgl_structured['time'] - bgl_structured['time'][0]
     ).dt.total_seconds().astype(int)
-    # get the label for each log("-" is normal, else are abnormal label)
+    # 将label列的数据转换为二进制标签，其中"-"表示正常（转换为0），非"-"表示异常（转换为1）。
     bgl_structured['label'] = (bgl_structured['label'] != '-').astype(int)
     return bgl_structured
 
@@ -57,7 +57,7 @@ def bgl_sampling(bgl_structured):
         end_index = j
         start_end_pair = tuple((start_index, end_index))
         start_end_index_list.append(start_end_pair)
-    # start_end_index_list is the  window divided by window_size and step_size, 
+    # start_end_index_list is the window divided by window_size and step_size,
     # the front is the sequence number of the beginning of the window, 
     # and the end is the sequence number of the end of the window
     inst_number = len(start_end_index_list)

@@ -2,10 +2,17 @@ import sys
 
 from logparser import Spell
 
-input_dir = '../../data/HDFS_2k/'  # The input directory of log file
-output_dir = '../../data/spell_result/'  # The output directory of parsing results
-log_file = 'HDFS_2k.log'  # The input log file name
-log_format = '<Date> <Time> <Pid> <Level> <Component>: <Content>'  # HDFS_2k log format
+# ===== HDFS =====
+input_dir = '../../data/HDFS_2k/'
+log_file = 'HDFS_2k.log'
+log_format = '<Date> <Time> <Pid> <Level> <Component>: <Content>'  # 日志格式
+
+# ===== BGL =====
+# input_dir = '../../data/BGL_2k/'
+# log_file = 'BGL_2k.log'
+# log_format = '<Label> <Timestamp> <Date> <Node> <Time> <NodeRepeat> <Type> <Component> <Level> <Content>'
+
+output_dir = '../../data/spell_result/'  # 解析结果的输出目录
 tau = 0.5  # Message type threshold (default: 0.5)
 regex = []  # Regular expression list for optional preprocessing (default: [])
 
