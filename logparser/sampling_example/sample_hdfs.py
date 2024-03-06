@@ -46,4 +46,4 @@ def hdfs_sampling(log_file, window='session', window_size=0):
 
 
 # hdfs_sampling('../sampling_example/HDFS/HDFS_2k.log_structured.csv')
-hdfs_sampling('../sampling_example/hdfs/HDFS_100k.log_structured.csv')
+hdfs_sampling('hdfs/HDFS_100k.log_structured.csv')

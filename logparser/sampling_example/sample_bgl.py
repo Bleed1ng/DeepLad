@@ -2,13 +2,24 @@ import os
 import pandas as pd
 import numpy as np
 
-# window_size：每个滑动窗口的持续时间，单位是小时。0.5意味着每个窗口的持续时间是半小时，也就是30分钟。
-# step_size：滑动窗口移动的步长，单位是小时。0.2意味着每次窗口向前移动0.2小时，也就是12分钟。
-para = {"window_size": 0.5, "step_size": 0.2, "structured_file": "bgl/BGL_100k_structured.csv",
-        "BGL_sequence": 'bgl/BGL_sequence.csv'}
+para = {
+    "window_size": 0.5,  # 每个滑动窗口的持续时间，单位是小时。0.5意味着每个窗口的持续时间是半小时，也就是30分钟。
+    "step_size": 0.2,  # 滑动窗口移动的步长，单位是小时。0.2意味着每次窗口向前移动0.2小时，也就是12分钟。
+    "structured_file": "bgl/BGL_100k_structured.csv",
+    "BGL_sequence": 'bgl/BGL_sequence.csv'
+}
 
 
 def load_BGL():
+    """
+    --------------BGL_structured.csv--------------
+     label｜           time            ｜ event_id
+       -  ｜2005-06-03-15.42.50.363779 ｜ E189
+       -  ｜2005-06-03-15.42.50.527847 ｜ E189
+    ----------------------------------------------
+    根据time计算seconds_since
+    :return: label、seconds_since、event_id
+    """
     structured_file = para["structured_file"]
     bgl_structured = pd.read_csv(structured_file)
     bgl_structured["time"] = pd.to_datetime(bgl_structured["time"], format="%Y-%m-%d-%H.%M.%S.%f")
@@ -22,11 +33,15 @@ def load_BGL():
 
 
 def bgl_sampling(bgl_structured):
+    """
+    BGL数据集的滑动窗口采样
+    :param bgl_structured:
+    :return:
+    """
     label_data, time_data, event_mapping_data = (bgl_structured['label'].values,
                                                  bgl_structured['seconds_since'].values,
                                                  bgl_structured['event_id'].values)
     log_size = len(label_data)
-    # split into sliding window
     start_time = time_data[0]
     start_index = 0
     end_index = 0
@@ -63,8 +78,7 @@ def bgl_sampling(bgl_structured):
     inst_number = len(start_end_index_list)
     print('there are %d instances (sliding windows) in this dataset' % inst_number)
 
-    # get all the log indexs in each time window by ranging from start_index to end_index
-
+    # 获取每个时间窗口中的所有日志索引，范围从start_index到end_index
     expanded_indexes_list = [[] for i in range(inst_number)]
     expanded_event_list = [[] for i in range(inst_number)]
 
@@ -79,9 +93,9 @@ def bgl_sampling(bgl_structured):
     labels = []
 
     for j in range(inst_number):
-        label = 0  # 0 represent success, 1 represent failure
+        label = 0  # 0表示成功，1表示失败
         for k in expanded_indexes_list[j]:
-            # If one of the sequences is abnormal (1), the sequence is marked as abnormal
+            # 如果其中一个序列是异常的（1），则将该序列标记为异常
             if label_data[k]:
                 label = 1
                 continue
