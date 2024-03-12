@@ -23,8 +23,7 @@ options['window_size'] = 10  # if fix_window
 options['sequentials'] = True
 options['quantitatives'] = True
 options['semantics'] = False
-options['feature_num'] = sum(
-    [options['sequentials'], options['quantitatives'], options['semantics']])
+options['feature_num'] = sum([options['sequentials'], options['quantitatives'], options['semantics']])
 
 # Model
 options['input_size'] = 1

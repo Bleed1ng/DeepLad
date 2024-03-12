@@ -170,3 +170,41 @@ class Predictor():
             'Precision: {:.3f}%, Recall: {:.3f}%, F1-measure: {:.3f}%'
             .format(TP, TN, FP, FN, P, R, F1)
         )
+
+    # 示例检测
+    def detect(self):
+        model = self.model.to(self.device)
+        model.load_state_dict(torch.load(self.model_path)['state_dict'])  # 加载模型参数
+        model.eval()  # 设置模型为评估模式
+        print('model_path: {}'.format(self.model_path))
+        test_normal_loader, test_normal_length = generate('hdfs_test_normal_small')
+        with torch.no_grad():
+            # 去重后遍历每种序列，避免对相同的序列重复预测
+            for line in tqdm(test_normal_loader.keys()):
+                for i in range(len(line) - self.window_size):
+                    seq0 = line[i:i + self.window_size]  # 取出窗口大小的序列
+                    label = line[i + self.window_size]  # 取出窗口后的标签
+                    seq1 = [0] * 28
+                    log_counter = Counter(seq0)
+                    for key in log_counter:
+                        seq1[key] = log_counter[key]
+
+                    seq0 = (
+                        torch.tensor(seq0, dtype=torch.float)
+                        .view(-1, self.window_size, self.input_size)
+                        .to(self.device)
+                    )
+                    seq1 = (
+                        torch.tensor(seq1, dtype=torch.float)
+                        .view(-1, self.num_classes, self.input_size)
+                        .to(self.device)
+                    )
+                    label = torch.tensor(label).view(-1).to(self.device)
+                    output = model(features=[seq0, seq1], device=self.device)
+                    predicted = torch.argsort(output, 1)[0][-self.num_candidates:]
+                    if label not in predicted:
+                        print("检测为异常日志")
+                        break
+                    else:
+                        print("检测为正常日志")
+                        break
