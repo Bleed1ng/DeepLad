@@ -171,7 +171,7 @@ class Predictor():
             .format(TP, TN, FP, FN, P, R, F1)
         )
 
-    # 示例检测
+    # 检测
     def detect(self):
         model = self.model.to(self.device)
         model.load_state_dict(torch.load(self.model_path)['state_dict'])  # 加载模型参数
@@ -180,7 +180,7 @@ class Predictor():
         test_normal_loader, test_normal_length = generate('hdfs_test_normal_small')
         with torch.no_grad():
             # 去重后遍历每种序列，避免对相同的序列重复预测
-            for line in tqdm(test_normal_loader.keys()):
+            for line in test_normal_loader.keys():
                 for i in range(len(line) - self.window_size):
                     seq0 = line[i:i + self.window_size]  # 取出窗口大小的序列
                     label = line[i + self.window_size]  # 取出窗口后的标签

@@ -1,5 +1,6 @@
-from models.lstm import DeepLog
+from nn_models.lstm import DeepLog
 from tools.predict import Predictor
+from apscheduler.schedulers.background import BackgroundScheduler
 
 # Config Parameters
 options = dict()
@@ -38,5 +39,11 @@ def predict():
     predictor.detect()
 
 
-if __name__ == '__main__':
-    predict()
+def my_job():
+    print("Job executed!")
+
+
+def schedule_jobs():
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(my_job, 'interval', seconds=10)
+    scheduler.start()

@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from models.lstm import DeepLog, LogAnomaly, RobustLog
+from nn_models.lstm import DeepLog, LogAnomaly, RobustLog
 from tools.predict import Predictor
 from tools.train import Trainer
 from tools.utils import *
