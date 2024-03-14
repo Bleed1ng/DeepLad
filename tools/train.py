@@ -3,8 +3,6 @@ import os
 import sys
 import time
 
-sys.path.append('../../')
-
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -14,7 +12,7 @@ from tqdm import tqdm
 
 from dataset.log import log_dataset
 from dataset.sample import sliding_window, session_window
-from tools.utils import (save_parameters, seed_everything, train_val_split)
+from tools.utils import save_parameters
 
 
 class Trainer:

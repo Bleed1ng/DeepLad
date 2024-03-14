@@ -1,22 +1,14 @@
-import gc
-import os
-import sys
 import time
 from collections import Counter
 
 import numpy as np
-import pandas as pd
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from dataset.log import log_dataset
 from dataset.sample import session_window
-from tools.utils import (save_parameters, seed_everything, train_val_split)
-
-sys.path.append('../')
 
 
 # 去重，统计每种序列出现的次数，并且用-1填充长度不够的序列
@@ -35,7 +27,21 @@ def generate(name):
     return hdfs, length
 
 
-class Predictor():
+def generate_sequence(sequence_list):
+    window_size = 10
+    hdfs = {}
+    length = 0
+    for ln in sequence_list:
+        ln = list(map(lambda n: n - 1, map(int, ln.strip().split())))
+        # 如果列表的长度小于window_size + 1，则在列表的末尾添加 - 1，直到其长度达到window_size + 1。
+        ln = ln + [-1] * (window_size + 1 - len(ln))
+        hdfs[tuple(ln)] = hdfs.get(tuple(ln), 0) + 1
+        length += 1
+    print('Number of sessions({}): {}'.format('log_key_list', len(hdfs)))
+    return hdfs, length
+
+
+class Predictor:
     def __init__(self, model, options):
         self.data_dir = options['data_dir']
         self.device = options['device']
@@ -170,12 +176,12 @@ class Predictor():
         )
 
     # 检测
-    def detect(self):
+    def detect(self, sequence_list):
         model = self.model.to(self.device)
         model.load_state_dict(torch.load(self.model_path)['state_dict'])  # 加载模型参数
         model.eval()  # 设置模型为评估模式
         print('model_path: {}'.format(self.model_path))
-        test_normal_loader, test_normal_length = generate('hdfs_test_normal_small')
+        test_normal_loader, test_normal_length = generate_sequence(sequence_list=sequence_list)
         with torch.no_grad():
             # 去重后遍历每种序列，避免对相同的序列重复预测
             for line in test_normal_loader.keys():
@@ -198,8 +204,8 @@ class Predictor():
                     output = model(features=[seq0, seq1], device=self.device)
                     predicted = torch.argsort(output, 1)[0][-self.num_candidates:]
                     if label not in predicted:
-                        print("检测为异常日志")
+                        print("=====检测到异常日志=====")
                         break
                     else:
-                        print("检测为正常日志")
+                        print("正常")
                         break
