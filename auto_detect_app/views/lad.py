@@ -6,17 +6,6 @@ from tools.predict import Predictor
 first_test = Blueprint('first_test', __name__)
 detect_task = Blueprint('detect_task', __name__)
 
-
-@first_test.route('/hello', methods=['GET'])
-def query_data():
-    # 获取查询参数
-    query_param = request.args.get('param', default=None, type=str)
-    print("查询参数: ", query_param)
-    output = "请求成功"
-    print(output)
-    return jsonify(message=output)
-
-
 options = dict()
 options['data_dir'] = '../data/'  # 数据目录
 options['model_path'] = "../result/deeplog/deeplog_last.pth"  # 模型路径
@@ -39,6 +28,16 @@ options['input_size'] = 1
 options['hidden_size'] = 64
 options['num_layers'] = 2
 options['num_classes'] = 28
+
+
+@first_test.route('/hello', methods=['GET'])
+def query_data():
+    # 获取查询参数
+    query_param = request.args.get('param', default=None, type=str)
+    print("查询参数: ", query_param)
+    output = "请求成功"
+    print(output)
+    return jsonify(message=output)
 
 
 @detect_task.route('/detect', methods=['POST'])

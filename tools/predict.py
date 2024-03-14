@@ -4,8 +4,6 @@ import sys
 import time
 from collections import Counter
 
-sys.path.append('../')
-
 import numpy as np
 import pandas as pd
 import torch
@@ -17,6 +15,8 @@ from tqdm import tqdm
 from dataset.log import log_dataset
 from dataset.sample import session_window
 from tools.utils import (save_parameters, seed_everything, train_val_split)
+
+sys.path.append('../')
 
 
 # 去重，统计每种序列出现的次数，并且用-1填充长度不够的序列
@@ -72,16 +72,14 @@ class Predictor():
                     for key in log_counter:
                         seq1[key] = log_counter[key]
 
-                    seq0 = (
-                        torch.tensor(seq0, dtype=torch.float)
-                        .view(-1, self.window_size, self.input_size)
-                        .to(self.device)
-                    )
-                    seq1 = (
-                        torch.tensor(seq1, dtype=torch.float)
-                        .view(-1, self.num_classes, self.input_size)
-                        .to(self.device)
-                    )
+                    seq0 = (torch
+                            .tensor(seq0, dtype=torch.float)
+                            .view(-1, self.window_size, self.input_size)
+                            .to(self.device))
+                    seq1 = (torch
+                            .tensor(seq1, dtype=torch.float)
+                            .view(-1, self.num_classes, self.input_size)
+                            .to(self.device))
                     label = torch.tensor(label).view(-1).to(self.device)
                     output = model(features=[seq0, seq1], device=self.device)
                     predicted = torch.argsort(output, 1)[0][-self.num_candidates:]
@@ -188,17 +186,14 @@ class Predictor():
                     log_counter = Counter(seq0)
                     for key in log_counter:
                         seq1[key] = log_counter[key]
-
-                    seq0 = (
-                        torch.tensor(seq0, dtype=torch.float)
-                        .view(-1, self.window_size, self.input_size)
-                        .to(self.device)
-                    )
-                    seq1 = (
-                        torch.tensor(seq1, dtype=torch.float)
-                        .view(-1, self.num_classes, self.input_size)
-                        .to(self.device)
-                    )
+                    seq0 = (torch
+                            .tensor(seq0, dtype=torch.float)
+                            .view(-1, self.window_size, self.input_size)
+                            .to(self.device))
+                    seq1 = (torch
+                            .tensor(seq1, dtype=torch.float)
+                            .view(-1, self.num_classes, self.input_size)
+                            .to(self.device))
                     label = torch.tensor(label).view(-1).to(self.device)
                     output = model(features=[seq0, seq1], device=self.device)
                     predicted = torch.argsort(output, 1)[0][-self.num_candidates:]

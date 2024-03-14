@@ -1,6 +1,9 @@
+import json
 from nn_models.lstm import DeepLog
 from tools.predict import Predictor
 from apscheduler.schedulers.background import BackgroundScheduler
+from elasticsearch import Elasticsearch
+from auto_detect_app.services.elasticsearch_service import ElasticSearchService
 
 # Config Parameters
 options = dict()
@@ -39,11 +42,31 @@ def predict():
     predictor.detect()
 
 
-def my_job():
+def detect_job():
+    es = ElasticSearchService()
+    # 定时检测过去一段时间内的日志数据
+    # 1. 从ES中获取过去一段时间内的日志数据，并且要往前多取10条数据，因为窗口大小为10
+    index = 'hdfs_sample_logs_*'
+    body = {
+        "query": {
+            "term": {
+                "Pid": "2665"
+            }
+        },
+        "size": 10
+    }
+    # 使用实例调用search方法
+    results = es.search(index, body)
+    # 以json格式打印结果，要进行换行缩进
+    print(json.dumps(results, indent=4))
+
+    # 2. 对日志数据的content字段进行解析，将该批次日志转换为模型的输入格式，即日志键序列
+    # 3. 使用模型进行检测
+    # 4. 将预测结果存入ES中
     print("Job executed!")
 
 
 def schedule_jobs():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(my_job, 'interval', seconds=10)
+    scheduler.add_job(detect_job, 'interval', seconds=10)
     scheduler.start()
