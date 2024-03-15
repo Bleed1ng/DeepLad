@@ -1,9 +1,10 @@
-import json
+from apscheduler.schedulers.background import BackgroundScheduler
+
+from auto_detect_app.config import configure_logger
+from auto_detect_app.services.elasticsearch_service import ElasticSearchService
+from logparser.Spell import Spell
 from nn_models.lstm import DeepLog
 from tools.predict import Predictor
-from apscheduler.schedulers.background import BackgroundScheduler
-from auto_detect_app.services.elasticsearch_service import ElasticSearchService
-from auto_detect_app.config import configure_logger
 
 logger = configure_logger()
 
@@ -72,7 +73,7 @@ def detect_job():
     batch_log_list = []
     for hit in results['hits']['hits']:
         log_dict = {
-            'id': hit['_id'],
+            'log_id': hit['_id'],
             '@timestamp': hit['_source']['@timestamp'],
             'content': hit['_source']['Content']
         }
@@ -85,6 +86,13 @@ def detect_job():
     in: content_list
     out: log_key_sequence
     """
+    log_name = 'HDFS_2k.log'
+    result_dir = '/Users/Bleeding/Projects/BJTU/DeepLad/data/spell_result/'
+    parser = Spell.LogParser(outdir=result_dir)
+
+    log_key_seq = parser.parse_log_from_list(log_name, batch_log_list)
+    print(log_key_seq)
+
     sequence_list = []
 
     """

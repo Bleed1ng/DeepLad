@@ -4,21 +4,32 @@ Author      : LogPAI team
 License     : MIT
 """
 
-import re
 import os
-import pandas as pd
-import hashlib
-from datetime import datetime
+import re
 import string
+from datetime import datetime
+
+import pandas as pd
 
 
 class LCSObject:
     """ Class object to store a log group with the same template
     """
 
-    def __init__(self, logTemplate=[], log_id_list=[]):
-        self.logTemplate = logTemplate
+    def __init__(self, log_template=[], log_id_list=[]):
+        self.log_template = log_template
         self.log_id_list = log_id_list
+
+
+class LogCluster:
+    """ 用于存储具有相同模板的日志组的类对象
+    """
+
+    def __init__(self, log_key=-1, log_template=[], log_id_list=[]):
+        self.log_key = log_key
+        self.log_template = log_template
+        self.log_id_list = log_id_list
+        self.size = len(log_id_list)
 
 
 class Node:
@@ -26,7 +37,7 @@ class Node:
     """
 
     def __init__(self, token='', templateNo=0):
-        self.logClust = None
+        self.log_cluster = None
         self.token = token
         self.templateNo = templateNo
         self.childD = dict()
@@ -54,6 +65,12 @@ class LogParser:
         self.keep_para = keep_para
 
     def LCS(self, seq1, seq2):
+        """
+        计算两个序列的最长公共子序列
+        :param seq1:
+        :param seq2:
+        :return:
+        """
         lengths = [[0 for j in range(len(seq2) + 1)] for i in range(len(seq1) + 1)]
         # row 0 and column 0 are initialized to 0 already
         for i in range(len(seq1)):
@@ -78,15 +95,15 @@ class LogParser:
                 lenOfSeq2 -= 1
         return result
 
-    def SimpleLoopMatch(self, log_clust_list, seq):
-        for logClust in log_clust_list:
-            if float(len(logClust.logTemplate)) < 0.5 * len(seq):
+    def SimpleLoopMatch(self, log_cluster_list, seq):
+        for log_cluster in log_cluster_list:
+            if float(len(log_cluster.log_template)) < 0.5 * len(seq):
                 continue
             # Check the template is a subsequence of seq (we use set checking as a proxy here for speedup since
             # incorrect-ordering bad cases rarely occur in logs)
             token_set = set(seq)
-            if all(token in token_set or token == '<*>' for token in logClust.logTemplate):
-                return logClust
+            if all(token in token_set or token == '<*>' for token in log_cluster.log_template):
+                return log_cluster
         return None
 
     def PrefixTreeMatch(self, parentn, seq, idx):
@@ -95,16 +112,15 @@ class LogParser:
         for i in range(idx, length):
             if seq[i] in parentn.childD:
                 childn = parentn.childD[seq[i]]
-                if childn.logClust is not None:
-                    const_log_message = [w for w in childn.logClust.logTemplate if w != '<*>']
+                if childn.log_cluster is not None:
+                    const_log_message = [w for w in childn.log_cluster.log_template if w != '<*>']
                     if float(len(const_log_message)) >= self.tau * length:
-                        return childn.logClust
+                        return childn.log_cluster
                 else:
                     return self.PrefixTreeMatch(childn, seq, i + 1)
-
         return retLogClust
 
-    def LCSMatch(self, log_clust_list, seq):
+    def LCSMatch(self, log_cluster_list, seq):
         retLogClust = None
 
         maxLen = -1
@@ -112,15 +128,15 @@ class LogParser:
         maxClust = None
         set_seq = set(seq)
         size_seq = len(seq)
-        for logClust in log_clust_list:
-            set_template = set(logClust.logTemplate)
+        for log_cluster in log_cluster_list:
+            set_template = set(log_cluster.log_template)
             if len(set_seq & set_template) < 0.5 * size_seq:
                 continue
-            lcs = self.LCS(seq, logClust.logTemplate)
-            if len(lcs) > maxLen or (len(lcs) == maxLen and len(logClust.logTemplate) < len(maxClust.logTemplate)):
+            lcs = self.LCS(seq, log_cluster.log_template)
+            if len(lcs) > maxLen or (len(lcs) == maxLen and len(log_cluster.log_template) < len(maxClust.log_template)):
                 maxLen = len(lcs)
                 maxlcs = lcs
-                maxClust = logClust
+                maxClust = log_cluster
 
         # LCS should be large then tau * len(itself)
         if float(maxLen) >= self.tau * size_seq:
@@ -129,6 +145,12 @@ class LogParser:
         return retLogClust
 
     def getTemplate(self, lcs, seq):
+        """
+        生成日志模版
+        :param lcs:
+        :param seq:
+        :return:
+        """
         retVal = []
         if not lcs:
             return retVal
@@ -150,7 +172,7 @@ class LogParser:
 
     def addSeqToPrefixTree(self, rootn, new_cluster):
         parentn = rootn
-        seq = new_cluster.logTemplate
+        seq = new_cluster.log_template
         seq = [w for w in seq if w != '<*>']
 
         for i in range(len(seq)):
@@ -163,12 +185,12 @@ class LogParser:
                 parentn.childD[tokenInSeq] = Node(token=tokenInSeq, templateNo=1)
             parentn = parentn.childD[tokenInSeq]
 
-        if parentn.logClust is None:
-            parentn.logClust = new_cluster
+        if parentn.log_cluster is None:
+            parentn.log_cluster = new_cluster
 
     def removeSeqFromPrefixTree(self, rootn, new_cluster):
         parentn = rootn
-        seq = new_cluster.logTemplate
+        seq = new_cluster.log_template
         seq = [w for w in seq if w != '<*>']
 
         for tokenInSeq in seq:
@@ -181,31 +203,6 @@ class LogParser:
                     matchedNode.templateNo -= 1
                     parentn = matchedNode
 
-    # 将日志聚类结果输出到文件
-    def output_result_file(self, log_clust_list):
-        templates = [0] * self.df_log.shape[0]
-        ids = [0] * self.df_log.shape[0]
-        df_event = []
-        event_id = 0
-        # 按log模版的分类，分配event_id
-        for log_clust in log_clust_list:
-            template_str = ' '.join(log_clust.logTemplate)
-            event_id += 1
-            # 或根据log模版生成md5值，取前8位作为event_id
-            # event_id = hashlib.md5(template_str.encode('utf-8')).hexdigest()[0:8]
-            for log_id in log_clust.log_id_list:
-                templates[log_id - 1] = template_str
-                ids[log_id - 1] = event_id
-            df_event.append([event_id, template_str, len(log_clust.log_id_list)])
-        df_event = pd.DataFrame(df_event, columns=['EventId', 'EventTemplate', 'Occurrences'])
-
-        self.df_log['EventId'] = ids
-        self.df_log['EventTemplate'] = templates
-        if self.keep_para:
-            self.df_log["ParameterList"] = self.df_log.apply(self.get_parameter_list, axis=1)
-        self.df_log.to_csv(os.path.join(self.savePath, self.log_name + '_structured.csv'), index=False)
-        df_event.to_csv(os.path.join(self.savePath, self.log_name + '_templates.csv'), index=False)
-
     def printTree(self, node, dep):
         pStr = ''
         for i in xrange(dep):
@@ -215,12 +212,39 @@ class LogParser:
             pStr += 'Root'
         else:
             pStr += node.token
-            if node.logClust is not None:
-                pStr += '-->' + ' '.join(node.logClust.logTemplate)
+            if node.log_cluster is not None:
+                pStr += '-->' + ' '.join(node.log_cluster.log_template)
         print(pStr + ' (' + str(node.templateNo) + ')')
 
         for child in node.childD:
             self.printTree(node.childD[child], dep + 1)
+
+    def output_result_file(self, log_cluster_list):
+        """
+        将日志聚类结果输出到csv文件
+        :param log_cluster_list:
+        :return:
+        """
+        templates = [0] * self.df_log.shape[0]
+        log_key_seq = [0] * self.df_log.shape[0]
+        df_event = []
+        event_id = 0
+        # 按log模版的分类，分配event_id
+        for log_cluster in log_cluster_list:
+            template_str = ' '.join(log_cluster.log_template)
+            event_id += 1
+            for log_id in log_cluster.log_id_list:
+                templates[log_id - 1] = template_str
+                log_key_seq[log_id - 1] = event_id
+            df_event.append([event_id, template_str, len(log_cluster.log_id_list)])
+        df_event = pd.DataFrame(df_event, columns=['EventId', 'EventTemplate', 'Occurrences'])
+
+        self.df_log['EventId'] = log_key_seq
+        self.df_log['EventTemplate'] = templates
+        if self.keep_para:
+            self.df_log["ParameterList"] = self.df_log.apply(self.get_parameter_list, axis=1)
+        self.df_log.to_csv(os.path.join(self.savePath, self.log_name + '_structured.csv'), index=False)
+        df_event.to_csv(os.path.join(self.savePath, self.log_name + '_templates.csv'), index=False)
 
     def parse(self, log_name):
         start_time = datetime.now()
@@ -228,7 +252,7 @@ class LogParser:
         self.log_name = log_name
         self.load_data()
         rootNode = Node()
-        log_clust_list = []
+        log_cluster_list = []
 
         count = 0
         for idx, line in self.df_log.iterrows():
@@ -243,25 +267,22 @@ class LogParser:
 
             # Find an existing matched log cluster
             match_cluster = self.PrefixTreeMatch(rootNode, const_log_message_list, 0)
-
             if match_cluster is None:
-                match_cluster = self.SimpleLoopMatch(log_clust_list, const_log_message_list)
-
+                match_cluster = self.SimpleLoopMatch(log_cluster_list, const_log_message_list)
                 if match_cluster is None:
-                    match_cluster = self.LCSMatch(log_clust_list, log_message_list)
-
+                    match_cluster = self.LCSMatch(log_cluster_list, log_message_list)
                     # Match no existing log cluster
                     if match_cluster is None:
-                        new_cluster = LCSObject(logTemplate=log_message_list, log_id_list=[log_id])
-                        log_clust_list.append(new_cluster)
+                        new_cluster = LCSObject(log_template=log_message_list, log_id_list=[log_id])
+                        log_cluster_list.append(new_cluster)
                         self.addSeqToPrefixTree(rootNode, new_cluster)
                     # Add the new log message to the existing cluster
                     else:
-                        newTemplate = self.getTemplate(self.LCS(log_message_list, match_cluster.logTemplate),
-                                                       match_cluster.logTemplate)
-                        if ' '.join(newTemplate) != ' '.join(match_cluster.logTemplate):
+                        new_template = self.getTemplate(self.LCS(log_message_list, match_cluster.log_template),
+                                                        match_cluster.log_template)
+                        if ' '.join(new_template) != ' '.join(match_cluster.log_template):
                             self.removeSeqFromPrefixTree(rootNode, match_cluster)
-                            match_cluster.logTemplate = newTemplate
+                            match_cluster.log_template = new_template
                             self.addSeqToPrefixTree(rootNode, match_cluster)
             if match_cluster:
                 match_cluster.log_id_list.append(log_id)
@@ -274,23 +295,93 @@ class LogParser:
         if not os.path.exists(self.savePath):
             os.makedirs(self.savePath)
 
-        self.output_result_file(log_clust_list)
+        self.output_result_file(log_cluster_list)
         print('Parsing done. [Time taken: {!s}]'.format(datetime.now() - start_time))
+
+    def parse_log_from_list(self, log_name, batch_log_list):
+        """
+        从日志列表集合中解析日志，要以现有的模版进行匹配，如果没有匹配到则新建一个模版
+        :param log_name:
+        :param batch_log_list: 待检测的日志列表
+        :return: log_key_seq (或者直接返回日志列表的解析结果？？？)
+        """
+        self.log_name = log_name
+        self.df_log = pd.DataFrame(batch_log_list)
+        rootNode = Node()
+        log_key_seq = []
+        log_cluster_list = []  # 从result_dir中加载已有的模版（如有），用于存储日志模版的列表
+        log_templates_file = os.path.join(self.savePath, log_name + '_templates.csv')
+        if os.path.exists(log_templates_file):
+            df_event = pd.read_csv(log_templates_file)
+            for idx, row in df_event.iterrows():
+                log_cluster = LogCluster(log_key=row['EventId'],
+                                         log_template=row['EventTemplate'].split(),
+                                         log_id_list=[])
+                self.addSeqToPrefixTree(rootNode, log_cluster)  # 将现有的日志模版存入前缀树
+                log_cluster_list.append(log_cluster)
+
+        for line in batch_log_list:
+            log_id = line['log_id']
+            log_message_list = list(
+                filter(
+                    lambda x: x != '',
+                    re.split(r'[\s=:,]', self.preprocess(line['content']))
+                )
+            )
+            const_log_message_list = [w for w in log_message_list if w != '<*>']
+
+            # 匹配现有的日志模版
+            # 前缀树
+            match_cluster = self.PrefixTreeMatch(rootNode, const_log_message_list, 0)
+            if match_cluster is None:
+                # 简单遍历
+                match_cluster = self.SimpleLoopMatch(log_cluster_list, const_log_message_list)
+                if match_cluster is None:
+                    # 最长公共子序列
+                    match_cluster = self.LCSMatch(log_cluster_list, log_message_list)
+                    # 没有匹配到现有的日志模版
+                    if match_cluster is None:
+                        # 新建一个日志模版，log_key根据已有的模版数量+1
+                        new_cluster = LogCluster(log_key=len(log_cluster_list) + 1,
+                                                 log_template=log_message_list,
+                                                 log_id_list=[log_id])
+                        log_cluster_list.append(new_cluster)
+                        self.addSeqToPrefixTree(rootNode, new_cluster)
+                    # Add the new log message to the existing cluster
+                    else:
+                        new_template = self.getTemplate(
+                            self.LCS(log_message_list, match_cluster.log_template),
+                            match_cluster.log_template
+                        )
+                        if ' '.join(new_template) != ' '.join(match_cluster.log_template):
+                            self.removeSeqFromPrefixTree(rootNode, match_cluster)
+                            match_cluster.log_template = new_template
+                            match_cluster.size = len(match_cluster.log_id_list)
+                            self.addSeqToPrefixTree(rootNode, match_cluster)
+            if match_cluster:
+                match_cluster.log_id_list.append(log_id)
+                match_cluster.size = len(match_cluster.log_id_list)
+
+            # 将解析完的日志键序列存入log_key_seq
+            log_key_seq.append(match_cluster.log_key)
+
+        return log_key_seq
 
     def load_data(self):
         headers, regex = self.generate_logformat_regex(self.logformat)
         self.df_log = self.log_to_dataframe(os.path.join(self.path, self.log_name),
                                             regex,
-                                            headers,
-                                            self.logformat)
+                                            headers)
 
     def preprocess(self, line):
+        """预处理日志消息，将日志消息中的正则表达式匹配的内容替换为'<*>'
+        """
         for currentRex in self.rex:
             line = re.sub(currentRex, '<*>', line)
         return line
 
-    def log_to_dataframe(self, log_file, regex, headers, logformat):
-        """ Function to transform log file to dataframe 
+    def log_to_dataframe(self, log_file, regex, headers):
+        """ 将日志数据转换为DataFrame
         """
         log_messages = []
         line_count = 0
@@ -310,7 +401,7 @@ class LogParser:
         return log_df
 
     def generate_logformat_regex(self, logformat):
-        """ Function to generate regular expression to split log messages
+        """ 生成拆分日志消息的正则表达式
         """
         headers = []
         splitters = re.split(r'(<[^<>]+>)', logformat)
