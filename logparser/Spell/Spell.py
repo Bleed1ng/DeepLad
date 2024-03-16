@@ -1,9 +1,3 @@
-"""
-Description : This file implements the Spell algorithm for log parsing
-Author      : LogPAI team
-License     : MIT
-"""
-
 import os
 import re
 import string
@@ -300,7 +294,7 @@ class LogParser:
 
     def parse_log_from_list(self, log_name, batch_log_list):
         """
-        从日志列表集合中解析日志，要以现有的模版进行匹配，如果没有匹配到则新建一个模版
+        从日志列表集合中解析日志，以现有的模版进行匹配，如果没有匹配到则新建一个模版
         :param log_name:
         :param batch_log_list: 待检测的日志列表
         :return: log_key_seq (或者直接返回日志列表的解析结果？？？)
@@ -309,7 +303,8 @@ class LogParser:
         self.df_log = pd.DataFrame(batch_log_list)
         rootNode = Node()
         log_key_seq = []
-        log_cluster_list = []  # 从result_dir中加载已有的模版（如有），用于存储日志模版的列表
+        # 从result_dir中加载已有的模版（如有）
+        log_cluster_list = []
         log_templates_file = os.path.join(self.savePath, log_name + '_templates.csv')
         if os.path.exists(log_templates_file):
             df_event = pd.read_csv(log_templates_file)
@@ -331,23 +326,19 @@ class LogParser:
             const_log_message_list = [w for w in log_message_list if w != '<*>']
 
             # 匹配现有的日志模版
-            # 前缀树
             match_cluster = self.PrefixTreeMatch(rootNode, const_log_message_list, 0)
             if match_cluster is None:
-                # 简单遍历
                 match_cluster = self.SimpleLoopMatch(log_cluster_list, const_log_message_list)
                 if match_cluster is None:
-                    # 最长公共子序列
                     match_cluster = self.LCSMatch(log_cluster_list, log_message_list)
-                    # 没有匹配到现有的日志模版
+                    # 三种方式均没有匹配到现有的日志模版，则新建一个日志模版，log_key根据已有的模版数量+1
                     if match_cluster is None:
-                        # 新建一个日志模版，log_key根据已有的模版数量+1
                         new_cluster = LogCluster(log_key=len(log_cluster_list) + 1,
                                                  log_template=log_message_list,
                                                  log_id_list=[log_id])
                         log_cluster_list.append(new_cluster)
                         self.addSeqToPrefixTree(rootNode, new_cluster)
-                    # Add the new log message to the existing cluster
+                    # 用LCS匹配到了现有的日志模版
                     else:
                         new_template = self.getTemplate(
                             self.LCS(log_message_list, match_cluster.log_template),

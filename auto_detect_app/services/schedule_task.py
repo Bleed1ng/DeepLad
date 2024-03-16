@@ -1,7 +1,9 @@
+import json
+
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from auto_detect_app.config import configure_logger
-from auto_detect_app.services.elasticsearch_service import ElasticSearchService
+from auto_detect_app.utils.elasticsearch_utils import ElasticSearchService
 from logparser.Spell import Spell
 from nn_models.lstm import DeepLog
 from tools.predict import Predictor
@@ -50,11 +52,7 @@ def predict(sequence_list):
 # 定时检测过去一段时间内的日志数据
 def detect_job():
     es = ElasticSearchService()
-    """
-    1. 从ES中获取过去一段时间内的日志数据，并且要往前多取10条数据，因为窗口大小为10
-    in:
-    out: content_list
-    """
+    # 1. 从ES中获取过去一段时间内的日志数据，并且要往前多取10条数据，因为窗口大小为10
     index = 'hdfs_sample_logs_*'
     body = {
         "query": {
@@ -65,11 +63,10 @@ def detect_job():
         "size": 10
     }
     results = es.search(index, body)
-    # print(json.dumps(results, indent=2))
+    print(json.dumps(results, indent=2))
     if results['hits']['total']['value'] == 0:
         logger.info("该批次待检测日志查询为空")
         return
-
     batch_log_list = []
     for hit in results['hits']['hits']:
         log_dict = {
@@ -79,13 +76,11 @@ def detect_job():
         }
         batch_log_list.append(log_dict)
 
-    """
-    2. 对日志数据的content字段进行解析，将该批次日志转换为模型的输入格式，即日志键序列
-        (1) 用spell解析content，得到对应的日志键列表（还可以额外取到参数值向量列表）
-        (2) 进行窗口采样，得到日志键序列
-    in: content_list
-    out: log_key_sequence
-    """
+    # 2. 对日志数据的content字段进行解析，将该批次日志转换为模型的输入格式，即日志键序列
+    #     (1) 用spell解析content，得到对应的日志键列表（还可以额外取到参数值向量列表）
+    #     (2) 进行窗口采样，得到日志键序列
+    # in: content_list
+    # out: log_key_seq
     log_name = 'HDFS_2k.log'
     result_dir = '/Users/Bleeding/Projects/BJTU/DeepLad/data/spell_result/'
     parser = Spell.LogParser(outdir=result_dir)

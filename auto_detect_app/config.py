@@ -9,6 +9,10 @@ class DatabaseConfig:
     DB_NAME = 'database'
 
 
+class RedisConfig:
+    REDIS_URL = 'redis://localhost:6379/0'
+
+
 class ElasticSearchConfig:
     ES_HOST = 'localhost'
     ES_PORT = 9200
@@ -25,12 +29,12 @@ def configure_logger():
     # 文件打印
     file_handler = logging.FileHandler('app.log')
     file_handler.setLevel(logging.INFO)
-    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    file_handler.setFormatter(logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s'))
 
     # 控制台打印
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
-    console_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    console_handler.setFormatter(logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s'))
 
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
