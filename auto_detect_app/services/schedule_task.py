@@ -4,6 +4,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from auto_detect_app.config import configure_logger
 from auto_detect_app.utils.elasticsearch_utils import ElasticSearchService
+from dataset.sampling_example.sample_hdfs import session_sampling
 from logparser.Spell import Spell
 from nn_models.lstm import DeepLog
 from tools.predict import Predictor
@@ -63,7 +64,7 @@ def detect_job():
         "size": 10
     }
     results = es.search(index, body)
-    print(json.dumps(results, indent=2))
+    # print(json.dumps(results, indent=2))
     if results['hits']['total']['value'] == 0:
         logger.info("该批次待检测日志查询为空")
         return
@@ -77,25 +78,30 @@ def detect_job():
         batch_log_list.append(log_dict)
 
     # 2. 对日志数据的content字段进行解析，将该批次日志转换为模型的输入格式，即日志键序列
-    #     (1) 用spell解析content，得到对应的日志键列表（还可以额外取到参数值向量列表）
+    #     (1) 用spell解析content，得到log_key_seq: [log_id, content, log_key]
     #     (2) 进行窗口采样，得到日志键序列
-    # in: content_list
-    # out: log_key_seq
     log_name = 'HDFS_2k.log'
-    result_dir = '/Users/Bleeding/Projects/BJTU/DeepLad/data/spell_result/'
+    result_dir = '/Users/Bleeding/Projects/BJTU/DeepLad/data/spell_result/'  # todo: 保存解析结果的目录，后续改为从Redis中获取
     parser = Spell.LogParser(outdir=result_dir)
+    log_key_list = parser.parse_log_from_list(log_name, batch_log_list)
+    # 逐行打印
+    print('解析完成：')
+    for log_key in log_key_list:
+        print(log_key)
 
-    log_key_seq = parser.parse_log_from_list(log_name, batch_log_list)
-    print(log_key_seq)
+    log_key_seq_list = session_sampling(log_key_list)
+    # 逐行打印
+    print('采样完成：')
+    for log_key_seq in log_key_seq_list:
+        print(log_key_seq)
 
-    sequence_list = []
 
-    """
-    3. 使用模型进行检测
-    """
-    # predict(sequence_list)
+"""
+3. 使用模型进行检测
+"""
+# predict(log_key_seq_list)
 
-    """
-    4. 将预测结果存入ES中
-    """
-    logger.info("检测完成")
+"""
+4. 将预测结果存入ES中
+"""
+logger.info("检测完成")

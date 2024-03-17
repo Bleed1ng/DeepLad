@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from dataset.log import log_dataset
+from dataset.log import LogDataset
 from dataset.sample import sliding_window, session_window
 from tools.utils import save_parameters
 
@@ -50,16 +50,16 @@ class Trainer:
         else:
             raise NotImplementedError
 
-        train_dataset = log_dataset(logs=train_logs,
-                                    labels=train_labels,
-                                    seq=self.sequentials,
-                                    quan=self.quantitatives,
-                                    sem=self.semantics)
-        valid_dataset = log_dataset(logs=val_logs,
-                                    labels=val_labels,
-                                    seq=self.sequentials,
-                                    quan=self.quantitatives,
-                                    sem=self.semantics)
+        train_dataset = LogDataset(logs=train_logs,
+                                   labels=train_labels,
+                                   seq=self.sequentials,
+                                   quan=self.quantitatives,
+                                   sem=self.semantics)
+        valid_dataset = LogDataset(logs=val_logs,
+                                   labels=val_labels,
+                                   seq=self.sequentials,
+                                   quan=self.quantitatives,
+                                   sem=self.semantics)
 
         del train_logs
         del val_logs

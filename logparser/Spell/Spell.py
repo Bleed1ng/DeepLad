@@ -297,12 +297,12 @@ class LogParser:
         从日志列表集合中解析日志，以现有的模版进行匹配，如果没有匹配到则新建一个模版
         :param log_name:
         :param batch_log_list: 待检测的日志列表
-        :return: log_key_seq (或者直接返回日志列表的解析结果？？？)
+        :return: log_key_list: [log_id, content, log_key] 解析后得到日志键的日志列表
         """
-        self.log_name = log_name
-        self.df_log = pd.DataFrame(batch_log_list)
+        # self.log_name = log_name
+        # self.df_log = pd.DataFrame(batch_log_list)
         rootNode = Node()
-        log_key_seq = []
+        log_key_list = []
         # 从result_dir中加载已有的模版（如有）
         log_cluster_list = []
         log_templates_file = os.path.join(self.savePath, log_name + '_templates.csv')
@@ -317,6 +317,7 @@ class LogParser:
 
         for line in batch_log_list:
             log_id = line['log_id']
+            content = line['content']
             log_message_list = list(
                 filter(
                     lambda x: x != '',
@@ -353,10 +354,15 @@ class LogParser:
                 match_cluster.log_id_list.append(log_id)
                 match_cluster.size = len(match_cluster.log_id_list)
 
-            # 将解析完的日志键序列存入log_key_seq
-            log_key_seq.append(match_cluster.log_key)
+            # 将解析完的日志键序列存入log_key_list
+            log_dict = {
+                'log_id': log_id,
+                'content': content,
+                'log_key': match_cluster.log_key if match_cluster else -1
+            }
+            log_key_list.append(log_dict)
 
-        return log_key_seq
+        return log_key_list
 
     def load_data(self):
         headers, regex = self.generate_logformat_regex(self.logformat)

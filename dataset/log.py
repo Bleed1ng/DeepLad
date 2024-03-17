@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import Dataset, Sampler
 
 
-class log_dataset(Dataset):
+class LogDataset(Dataset):
     def __init__(self, logs, labels, seq=True, quan=False, sem=False):
         self.seq = seq
         self.quan = quan
@@ -37,6 +37,6 @@ if __name__ == '__main__':
     train_logs = prepare_log(data_dir=data_dir,
                              datatype='train',
                              window_size=window_size)
-    train_dataset = log_dataset(log=train_logs, seq=True, quan=True)
+    train_dataset = LogDataset(log=train_logs, seq=True, quan=True)
     print(train_dataset[0])
     print(train_dataset[100])

@@ -1,3 +1,5 @@
+# Description: 该文件包含了用于对日志键序列和参数值向量数据进行滑动窗口采样的函数。
+
 import ast
 import json
 from collections import Counter
@@ -43,7 +45,7 @@ def down_sample(logs, labels, sample_ratio):
     return sample_logs, sample_labels
 
 
-# 滑动窗口采样(deeplog、loganomaly)
+# 滑动窗口采样(Deeplog、LogAnomaly)
 def sliding_window(data_dir, datatype, window_size, sample_ratio=1):
     """
         对日志键序列进行滑动窗口采样。

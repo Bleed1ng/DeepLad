@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from dataset.log import log_dataset
+from dataset.log import LogDataset
 from dataset.sample import session_window
 
 
@@ -142,11 +142,11 @@ class Predictor:
         model.eval()
         print('model_path: {}'.format(self.model_path))
         test_logs, test_labels = session_window(self.data_dir, datatype='test')
-        test_dataset = log_dataset(logs=test_logs,
-                                   labels=test_labels,
-                                   seq=self.sequentials,
-                                   quan=self.quantitatives,
-                                   sem=self.semantics)
+        test_dataset = LogDataset(logs=test_logs,
+                                  labels=test_labels,
+                                  seq=self.sequentials,
+                                  quan=self.quantitatives,
+                                  sem=self.semantics)
         self.test_loader = DataLoader(test_dataset,
                                       batch_size=self.batch_size,
                                       shuffle=False,

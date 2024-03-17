@@ -1,9 +1,10 @@
+#
+
 import ast
-import os
 import re
-import numpy as np
-import pandas as pd
 from collections import OrderedDict
+
+import pandas as pd
 
 
 def hdfs_sampling(log_file, window='session', window_size=0):
@@ -12,7 +13,8 @@ def hdfs_sampling(log_file, window='session', window_size=0):
         把解析后的日志文件转换成序列数据，(BlockId, LogKeyList, ParamVecList) 三列的形式。
 
         e.g.:
-        blk_-8775602795571523802, "['E7', 'E7']", "[['81110103321', 'blk_-8775602795571523802', 'mnt/hadoop/dfs/data/xxx'], ['81110103403', 'blk_-8775602795571523802', 'mnt/hadoop/dfs/xxx']]"
+        blk_-8775602795571523802, "['E7', 'E7']", "[['81110103321', 'blk_-8775602795571523802', 'mnt/hadoop/dfs/data/xxx'],
+                                                    ['81110103403', 'blk_-8775602795571523802', 'mnt/hadoop/dfs/xxx']]"
 
         参数:
             log_file (str): 日志文件的路径
@@ -45,5 +47,28 @@ def hdfs_sampling(log_file, window='session', window_size=0):
     data_df.to_csv('HDFS/HDFS_100k_sequence.csv', index=None)
 
 
-# hdfs_sampling('../sampling_example/HDFS/HDFS_2k.log_structured.csv')
-hdfs_sampling('hdfs/HDFS_100k.log_structured.csv')
+def session_sampling(log_list, window='session'):
+    """
+        对HDFS日志列表进行会话窗口采样,把解析后的日志文件转换成序列数据
+
+        参数:
+            log_key_list: [log_id, content, log_key]
+        返回:
+            [blk_1, [1, 2, 3]],
+            [blk_2, [1, 2, 3]],
+            [blk_3, [1, 2, 3]]
+        """
+    assert window == 'session', '特定数据集仅适用于会话窗口采样。'
+    data_dict = OrderedDict()
+    blk_id_list = []
+    for line in log_list:
+        # 使用正则表达式找到每行中Content列中的blk_id，并将结果存储在blk_id_list中，用set做一下去重
+        blk_id_set = set(re.findall(r'(blk_-?\d+)', line['content']))
+        for blk_id in blk_id_set:
+            if blk_id not in data_dict:
+                data_dict[blk_id] = {'log_key_seq': []}
+            data_dict[blk_id]['log_key_seq'].append(line['log_key'])
+            blk_id_list.append([blk_id, data_dict[blk_id]['log_key_seq']])
+    return blk_id_list
+
+# hdfs_sampling('hdfs/HDFS_100k.log_structured.csv')
