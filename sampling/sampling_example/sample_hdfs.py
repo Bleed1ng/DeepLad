@@ -3,6 +3,7 @@
 import ast
 import re
 from collections import OrderedDict
+from itertools import repeat
 
 import pandas as pd
 
@@ -47,20 +48,19 @@ def hdfs_sampling(log_file, window='session', window_size=0):
     data_df.to_csv('HDFS/HDFS_100k_sequence.csv', index=None)
 
 
-def session_sampling(log_list, window='session'):
+def session_sampling(log_list, window='session', window_size=10):
     """
-        对HDFS日志列表进行会话窗口采样,把解析后的日志文件转换成序列数据
+        对HDFS日志列表进行会话窗口采样,把解析出日志键的日志列表转换成日志键序列
 
         参数:
             log_key_list: [log_id, content, log_key]
         返回:
-            [blk_1, [1, 2, 3]],
-            [blk_2, [1, 2, 3]],
-            [blk_3, [1, 2, 3]]
+            [{blk_id: 'blk_1', seq: [1, 2, 3, 3, 5]},
+             {blk_id: 'blk_2', seq: [1, 2, 3, 4, 0]},
+             {blk_id: 'blk_3', seq: [1, 2, 3, 0, 0]}]
         """
     assert window == 'session', '特定数据集仅适用于会话窗口采样。'
     data_dict = OrderedDict()
-    blk_id_list = []
     for line in log_list:
         # 使用正则表达式找到每行中Content列中的blk_id，并将结果存储在blk_id_list中，用set做一下去重
         blk_id_set = set(re.findall(r'(blk_-?\d+)', line['content']))
@@ -68,7 +68,15 @@ def session_sampling(log_list, window='session'):
             if blk_id not in data_dict:
                 data_dict[blk_id] = {'log_key_seq': []}
             data_dict[blk_id]['log_key_seq'].append(line['log_key'])
-            blk_id_list.append([blk_id, data_dict[blk_id]['log_key_seq']])
-    return blk_id_list
+
+    sequence_list = [{'blk_id': blk_id, 'seq': data_dict[blk_id]['log_key_seq']} for blk_id in data_dict]
+
+    # 如果日志键序列长度小于window_size + 1，则在末尾补0，直到其长度达到window_size + 1。
+    blk_seq_list = []
+    for blk_seq in sequence_list:
+        blk_seq['seq'] = blk_seq['seq'] + list(repeat(0, window_size + 1 - len(blk_seq['seq'])))
+        blk_seq_list.append(blk_seq)
+
+    return blk_seq_list
 
 # hdfs_sampling('hdfs/HDFS_100k.log_structured.csv')

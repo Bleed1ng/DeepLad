@@ -10,8 +10,8 @@ import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from dataset.log import LogDataset
-from dataset.sample import sliding_window, session_window
+from sampling.log import LogDataset
+from sampling.sample import sliding_window, session_window
 from tools.utils import save_parameters
 
 

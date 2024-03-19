@@ -20,9 +20,7 @@ class RedisUtils:
         else:
             return None  # 如果值不存在，返回None
 
-        # 封装delete方法，接收键作为参数，返回删除结果
-
+    # 封装delete方法，接收键作为参数，返回删除结果
     def delete(self, key):
         result = self.redis_client.delete(key)  # 使用redis客户端删除键
-
         return result  # 返回删除结果，0表示失败，1表示成功

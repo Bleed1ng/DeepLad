@@ -4,7 +4,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from auto_detect_app.config import configure_logger
 from auto_detect_app.utils.elasticsearch_utils import ElasticSearchService
-from dataset.sampling_example.sample_hdfs import session_sampling
+from sampling.sampling_example.sample_hdfs import session_sampling
 from logparser.Spell import Spell
 from nn_models.lstm import DeepLog
 from tools.predict import Predictor
@@ -52,24 +52,15 @@ def predict(sequence_list):
 
 # 定时检测过去一段时间内的日志数据
 def detect_job():
-    es = ElasticSearchService()
     # 1. 从ES中获取过去一段时间内的日志数据，并且要往前多取10条数据，因为窗口大小为10
-    index = 'hdfs_sample_logs_*'
-    body = {
-        "query": {
-            "term": {
-                "Pid": "2665"
-            }
-        },
-        "size": 10
-    }
-    results = es.search(index, body)
-    # print(json.dumps(results, indent=2))
-    if results['hits']['total']['value'] == 0:
+    es = ElasticSearchService()
+    es_results = es.search_logs()
+    if es_results['hits']['total']['value'] == 0:
         logger.info("该批次待检测日志查询为空")
         return
+
     batch_log_list = []
-    for hit in results['hits']['hits']:
+    for hit in es_results['hits']['hits']:
         log_dict = {
             'log_id': hit['_id'],
             '@timestamp': hit['_source']['@timestamp'],
@@ -83,25 +74,19 @@ def detect_job():
     log_name = 'HDFS_2k.log'
     result_dir = '/Users/Bleeding/Projects/BJTU/DeepLad/data/spell_result/'  # todo: 保存解析结果的目录，后续改为从Redis中获取
     parser = Spell.LogParser(outdir=result_dir)
-    log_key_list = parser.parse_log_from_list(log_name, batch_log_list)
-    # 逐行打印
-    print('解析完成：')
-    for log_key in log_key_list:
-        print(log_key)
+    log_key_list = parser.parse_log_from_list(log_name, batch_log_list)  # 解析
+    session_seq_list = session_sampling(log_key_list)  # 采样
+    for i in session_seq_list:
+        print(i)
 
-    log_key_seq_list = session_sampling(log_key_list)
-    # 逐行打印
-    print('采样完成：')
-    for log_key_seq in log_key_seq_list:
-        print(log_key_seq)
+    # 3. 使用模型进行检测
+    # seq_list = []
+    # with open('/Users/Bleeding/Projects/BJTU/DeepLad/data/HDFS/hdfs_test_abnormal_small', 'r') as f:
+    #     for line in f:
+    #         seq_list.append(line)
+    predict(session_seq_list)
 
-
-"""
-3. 使用模型进行检测
-"""
-# predict(log_key_seq_list)
-
-"""
-4. 将预测结果存入ES中
-"""
-logger.info("检测完成")
+    """
+    4. 将预测结果存入ES中
+    """
+    # logger.info("检测完成")

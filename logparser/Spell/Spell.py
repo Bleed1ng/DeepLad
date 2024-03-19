@@ -357,8 +357,8 @@ class LogParser:
             # 将解析完的日志键序列存入log_key_list
             log_dict = {
                 'log_id': log_id,
-                'content': content,
-                'log_key': match_cluster.log_key if match_cluster else -1
+                'log_key': match_cluster.log_key if match_cluster else -1,
+                'content': content
             }
             log_key_list.append(log_dict)
 

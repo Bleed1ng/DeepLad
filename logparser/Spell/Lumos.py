@@ -6,11 +6,11 @@ log_file = 'HDFS_2k.log'
 log_format = '<Date> <Time> <Pid> <Level> <Component>: <Content>'  # 日志格式
 
 # ===== BGL =====
-# input_dir = '../../../dataset/BGL/'
+# input_dir = '../../../sampling/BGL/'
 # log_file = 'BGL.log'
 # log_format = '<Label> <Timestamp> <Date> <Node> <Time> <NodeRepeat> <Type> <Component> <Level> <Content>'
 
-# input_dir = '../../../dataset/syitsm_logs/'
+# input_dir = '../../../sampling/syitsm_logs/'
 # log_file = 'syitsm.log'
 # log_format = '[<DateTime>][<Level>][<RequestId>][<Thread>][<Tid>][<CodeLine>] - <Content>'
 

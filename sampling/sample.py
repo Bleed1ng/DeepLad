@@ -1,4 +1,4 @@
-# Description: 该文件包含了用于对日志键序列和参数值向量数据进行滑动窗口采样的函数。
+# Description: label it
 
 import ast
 import json
@@ -48,7 +48,7 @@ def down_sample(logs, labels, sample_ratio):
 # 滑动窗口采样(Deeplog、LogAnomaly)
 def sliding_window(data_dir, datatype, window_size, sample_ratio=1):
     """
-        对日志键序列进行滑动窗口采样。
+        对日志键序列进行滑动窗口采样。（用实际的日志键打标签）
         result_logs: 5 5 5 22 11 9 11 9 11 9 ——> label: 26
 
         参数:

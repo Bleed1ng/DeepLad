@@ -7,8 +7,8 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from dataset.log import LogDataset
-from dataset.sample import session_window
+from sampling.log import LogDataset
+from sampling.sample import session_window
 
 
 # 去重，统计每种序列出现的次数，并且用-1填充长度不够的序列
@@ -175,19 +175,21 @@ class Predictor:
             .format(TP, TN, FP, FN, P, R, F1)
         )
 
-    # 检测
-    def detect(self, sequence_list):
+    def detect(self, blk_seq_list):
+        """
+        将模型加载到设备上，然后对输入的序列进行检测
+        :param blk_seq_list:
+        :return:
+        """
         model = self.model.to(self.device)
         model.load_state_dict(torch.load(self.model_path)['state_dict'])  # 加载模型参数
         model.eval()  # 设置模型为评估模式
         print('model_path: {}'.format(self.model_path))
-        test_normal_loader, test_normal_length = generate_sequence(sequence_list=sequence_list)
         with torch.no_grad():
-            # 去重后遍历每种序列，避免对相同的序列重复预测
-            for line in test_normal_loader.keys():
-                for i in range(len(line) - self.window_size):
-                    seq0 = line[i:i + self.window_size]  # 取出窗口大小的序列
-                    label = line[i + self.window_size]  # 取出窗口后的标签
+            for blk_seq in blk_seq_list:
+                for i in range(len(blk_seq['seq']) - self.window_size):
+                    seq0 = blk_seq['seq'][i:i + self.window_size]  # 取出窗口大小的序列
+                    label = blk_seq['seq'][i + self.window_size]  # 取出窗口后的标签
                     seq1 = [0] * 28
                     log_counter = Counter(seq0)
                     for key in log_counter:
@@ -204,8 +206,8 @@ class Predictor:
                     output = model(features=[seq0, seq1], device=self.device)
                     predicted = torch.argsort(output, 1)[0][-self.num_candidates:]
                     if label not in predicted:
-                        print("=====检测到异常日志=====")
+                        print('=====异常blk_id: {}'.format(blk_seq['blk_id']))
                         break
                     else:
-                        print("正常")
+                        print('正常：blk_id: {}'.format(blk_seq['blk_id']))
                         break

@@ -38,7 +38,7 @@ cd logdeep
 ```
 
 Example of building your own log dataset  
-[SAMPLING_EXAMPLE.md](dataset/sampling_example/README.md)
+[SAMPLING_EXAMPLE.md](sampling/sampling_example/README.md)
 
 Train & Test DeepLog example
 
