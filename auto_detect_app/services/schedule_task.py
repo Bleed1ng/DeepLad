@@ -63,7 +63,6 @@ def detect_job():
     for hit in es_results['hits']['hits']:
         log_dict = {
             'log_id': hit['_id'],
-            '@timestamp': hit['_source']['@timestamp'],
             'content': hit['_source']['Content']
         }
         batch_log_list.append(log_dict)
@@ -71,13 +70,10 @@ def detect_job():
     # 2. 对日志数据的content字段进行解析，将该批次日志转换为模型的输入格式，即日志键序列
     #     (1) 用spell解析content，得到log_key_seq: [log_id, content, log_key]
     #     (2) 进行窗口采样，得到日志键序列
-    log_name = 'HDFS_2k.log'
     result_dir = '/Users/Bleeding/Projects/BJTU/DeepLad/data/spell_result/'  # todo: 保存解析结果的目录，后续改为从Redis中获取
     parser = Spell.LogParser(outdir=result_dir)
-    log_key_list = parser.parse_log_from_list(log_name, batch_log_list)  # 解析
+    log_key_list = parser.parse_log_from_list(batch_log_list)  # 解析
     session_seq_list = session_sampling(log_key_list)  # 采样
-    for i in session_seq_list:
-        print(i)
 
     # 3. 使用模型进行检测
     # seq_list = []

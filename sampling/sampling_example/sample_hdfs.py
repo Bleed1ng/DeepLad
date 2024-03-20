@@ -1,9 +1,11 @@
-#
+# 根据会话标识符对HDFS日志进行采样，将日志转换为序列数据
 
 import ast
+import os
 import re
 from collections import OrderedDict
 from itertools import repeat
+from tqdm import tqdm
 
 import pandas as pd
 
@@ -25,11 +27,11 @@ def hdfs_sampling(log_file, window='session', window_size=0):
         返回:
             None
         """
-    assert window == 'session', 'Only window=session is supported for HDFS_2k dataset. HDFS数据集仅适用于会话窗口采样。'
+    assert window == 'session', 'Only window=session is supported for HDFS_2k dataset.'
     print("Loading", log_file)
     struct_log = pd.read_csv(log_file, engine='c', na_filter=False, memory_map=True)
     data_dict = OrderedDict()
-    for idx, row in struct_log.iterrows():
+    for idx, row in tqdm(struct_log.iterrows(), desc='Sampling: ', total=struct_log.shape[0]):
         # 使用正则表达式找到每行中Content列中的blk_id，并将结果存储在blk_id_list中
         blk_id_list = re.findall(r'(blk_-?\d+)', row['Content'])
         # 将blk_id_list中的重复元素去掉
@@ -45,7 +47,7 @@ def hdfs_sampling(log_file, window='session', window_size=0):
 
     data_df = pd.DataFrame.from_dict(data_dict, orient='index').reset_index()
     data_df.columns = ['BlockId', 'EventIdList', 'ParameterList']
-    data_df.to_csv('HDFS/HDFS_100k_sequence.csv', index=None)
+    data_df.to_csv('hdfs/HDFS_2k_sequence.csv', index=None)
 
 
 def session_sampling(log_list, window='session', window_size=10):
@@ -79,4 +81,5 @@ def session_sampling(log_list, window='session', window_size=10):
 
     return blk_seq_list
 
-# hdfs_sampling('hdfs/HDFS_100k.log_structured.csv')
+
+hdfs_sampling('hdfs/HDFS_2k.log_structured.csv')

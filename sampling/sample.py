@@ -174,7 +174,7 @@ def sliding_window_param(data_dir, datatype, window_size, sample_ratio=1):
     result_logs = {'ParamVecList': []}
     labels = []
     if datatype == 'train':
-        data_dir += 'sampling_example/HDFS/HDFS_2k_sequence.csv'
+        data_dir += 'sampling_example/HDFS/HDFS_sequence.csv'
     if datatype == 'val':
         data_dir += 'HDFS/hdfs_test_normal'
 
