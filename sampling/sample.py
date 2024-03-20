@@ -2,6 +2,7 @@
 
 import ast
 import json
+import os
 from collections import Counter
 
 import numpy as np
@@ -27,10 +28,10 @@ def trp(l, n):
 
 # 下采样
 def down_sample(logs, labels, sample_ratio):
-    print('sampling...')
-    total_num = len(labels)
-    all_index = list(range(total_num))
-    sample_logs = {}
+    print('down sampling...')
+    total_num = len(labels)  # 总日志数
+    all_index = list(range(total_num))  # 生成一个包含所有日志索引的列表
+    sample_logs = {}  # 生成一个空字典
     for key in logs.keys():
         sample_logs[key] = []
     sample_labels = []
@@ -46,7 +47,7 @@ def down_sample(logs, labels, sample_ratio):
 
 
 # 滑动窗口采样(Deeplog、LogAnomaly)
-def sliding_window(data_dir, datatype, window_size, sample_ratio=1):
+def sliding_window_org(data_dir, datatype, window_size, sample_ratio=1):
     """
         对日志键序列进行滑动窗口采样。（用实际的日志键打标签）
         result_logs: 5 5 5 22 11 9 11 9 11 9 ——> label: 26
@@ -67,9 +68,9 @@ def sliding_window(data_dir, datatype, window_size, sample_ratio=1):
     result_logs = {'Sequentials': [], 'Quantitatives': [], 'Semantics': []}
     labels = []
     if datatype == 'train':
-        data_dir += 'HDFS/hdfs_train'
+        data_dir += 'hdfs/HDFS.log_structured.csv'
     if datatype == 'val':
-        data_dir += 'HDFS/hdfs_test_normal'
+        data_dir += 'hdfs/HDFS.log_structured.csv'
 
     with open(data_dir, 'r') as f:
         for line in f.readlines():
@@ -97,6 +98,7 @@ def sliding_window(data_dir, datatype, window_size, sample_ratio=1):
                 # 把窗口之后的下一个日志键作为标签
                 labels.append(line[i + window_size])
 
+    # 下采样
     if sample_ratio != 1:
         result_logs, labels = down_sample(result_logs, labels, sample_ratio)
 
@@ -150,6 +152,57 @@ def session_window(data_dir, datatype, sample_ratio=1):
     # result_logs, labels = up_sample(result_logs, labels)
 
     print('Number of sessions({}): {}'.format(data_dir, len(result_logs['Semantics'])))
+    return result_logs, labels
+
+
+# 滑动窗口采样(Deeplog、LogAnomaly)
+def sliding_window(data_dir, datatype, window_size, sample_ratio=1):
+    """
+    对日志键序列进行滑动窗口采样。（用实际的日志键打标签）
+    result_logs: 5 5 5 22 11 9 11 9 11 9 ——> label: 26
+
+    参数:
+    data_dir (str): 数据文件所在的目录。
+    datatype (str): 要处理的数据类型。可以是 'train' 或 'val'。
+    window_size (int): 滑动窗口的大小。
+    sample_ratio (float, 可选): 应采样的总日志数的比例。默认为1。
+
+    返回:
+    dict: 包含采样日志的字典。
+    list: 包含对应于采样日志的标签的列表。
+
+    """
+    num_sessions = 0
+    result_logs = {'Sequentials': []}
+    labels = []
+    if datatype == 'train':
+        data_dir += 'HDFS.log_sequence.csv'
+    if datatype == 'val':
+        data_dir += 'HDFS.log_sequence.csv'
+
+    # 从csv文件中读取数据，取第二列的日志键列表，并转化为实际的list类型
+    data_df = pd.read_csv(data_dir)
+    for line in tqdm(data_df['log_key_seq']):
+        num_sessions += 1
+        line = tuple(map(lambda n: n - 1, map(int, line.strip('[]').split(','))))
+
+        for i in range(len(line) - window_size):
+            sequential_pattern = list(line[i:i + window_size])
+            # 检查序列中是否包含-1
+            if 0 in sequential_pattern:
+                continue
+            sequential_pattern = np.array(sequential_pattern)[:, np.newaxis]
+            result_logs['Sequentials'].append(sequential_pattern)
+            # 把窗口之后的下一个日志键作为标签
+            labels.append(line[i + window_size])
+
+    # 下采样
+    if sample_ratio != 1:
+        result_logs, labels = down_sample(result_logs, labels, sample_ratio)
+
+    print('File {}, number of sessions {}'.format(data_dir, num_sessions))
+    print('File {}, number of seqs {}'.format(data_dir, len(result_logs['Sequentials'])))
+
     return result_logs, labels
 
 

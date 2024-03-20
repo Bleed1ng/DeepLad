@@ -39,11 +39,12 @@ class Trainer:
         if self.sample == 'sliding_window':
             train_logs, train_labels = sliding_window(self.data_dir,
                                                       datatype='train',
-                                                      window_size=self.window_size)
+                                                      window_size=self.window_size,
+                                                      sample_ratio=0.01)
             val_logs, val_labels = sliding_window(self.data_dir,
                                                   datatype='val',
                                                   window_size=self.window_size,
-                                                  sample_ratio=0.001)
+                                                  sample_ratio=0.00001)
         elif self.sample == 'session_window':
             train_logs, train_labels = session_window(self.data_dir, datatype='train')
             val_logs, val_labels = session_window(self.data_dir, datatype='val')
@@ -141,8 +142,7 @@ class Trainer:
     def save_log(self):
         try:
             for key, values in self.log.items():
-                pd.DataFrame(values).to_csv(self.save_dir + key + "_log.csv",
-                                            index=False)
+                pd.DataFrame(values).to_csv(self.save_dir + key + "_log.csv", index=False)
             print("Log saved")
         except:
             print("Failed to save logs")
@@ -155,10 +155,10 @@ class Trainer:
         print("Starting epoch: %d | phase: train | ⏰: %s | Learning rate: %f" % (epoch, start_time, lr))
         self.log['train']['lr'].append(lr)
         self.log['train']['time'].append(start_time)
-        self.model.train()  # 设置模型为训练模式，用于启用训练相关的功能，例如Dropout和BatchNorm
+        self.model.train()  # 设置模型为训练模式，用于启用训练相关的功能
         self.optimizer.zero_grad()  # 将梯度初始化为0，清空之前的梯度信息
         criterion = nn.CrossEntropyLoss()  # 交叉熵损失函数
-        tbar = tqdm(self.train_loader, desc="\r")  # 进度条，可视化训练进度
+        tbar = tqdm(self.train_loader, desc="\r")  # 进度条
         num_batch = len(self.train_loader)  # 训练集batch数量，用于计算平均loss
         total_losses = 0
         for i, (log, label) in enumerate(tbar):

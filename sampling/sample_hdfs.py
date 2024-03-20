@@ -10,7 +10,7 @@ from tqdm import tqdm
 import pandas as pd
 
 
-def hdfs_sampling(log_file, window='session', window_size=0):
+def hdfs_sampling(log_file, window='session', window_size=10):
     """
     对HDFS日志文件进行会话窗口采样
     把解析后的日志文件转换成序列数据，(BlockId, LogKeyList, ParamVecList) 三列的形式。
@@ -47,7 +47,7 @@ def hdfs_sampling(log_file, window='session', window_size=0):
 
     data_df = pd.DataFrame.from_dict(data_dict, orient='index').reset_index()
     data_df.columns = ['BlockId', 'EventIdList', 'ParameterList']
-    data_df.to_csv('hdfs/HDFS_2k.log_sequence.csv', index=None)
+    data_df.to_csv('hdfs/HDFS.log_param_sequence.csv', index=False)
 
 
 def session_sampling(log_list, window='session', window_size=10):
@@ -111,7 +111,7 @@ def session_sampling_from_file(log_file, window_size=10):
     # 保存采样结果到csv
     df_seq = pd.DataFrame(blk_seq_list)
     df_seq.columns = ['blk_id', 'log_key_seq']
-    df_seq.to_csv('hdfs/HDFS.log_sequence.csv', index=None)
+    df_seq.to_csv('hdfs/HDFS.log_sequence.csv', index=False)
 
 
-session_sampling_from_file('../../data/spell_result/HDFS.log_structured.csv')
+session_sampling_from_file('../data/spell_result/HDFS.log_structured.csv')

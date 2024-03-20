@@ -4,7 +4,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from auto_detect_app.config import configure_logger
 from auto_detect_app.utils.elasticsearch_utils import ElasticSearchService
-from sampling.sampling_example.sample_hdfs import session_sampling
+from sampling.sample_hdfs import session_sampling
 from logparser.Spell import Spell
 from nn_models.lstm import DeepLog
 from tools.predict import Predictor
