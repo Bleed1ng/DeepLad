@@ -1,3 +1,4 @@
+import os
 import time
 from collections import Counter
 
@@ -190,7 +191,7 @@ class Predictor:
                 for i in range(len(blk_seq['seq']) - self.window_size):
                     seq0 = blk_seq['seq'][i:i + self.window_size]  # 取出窗口大小的序列
                     label = blk_seq['seq'][i + self.window_size]  # 取出窗口后的标签
-                    seq1 = [0] * 28
+                    seq1 = [0] * 36  # 36是日志键的数量
                     log_counter = Counter(seq0)
                     for key in log_counter:
                         seq1[key] = log_counter[key]

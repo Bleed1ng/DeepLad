@@ -13,7 +13,7 @@ logger = configure_logger()
 
 options = dict()
 options['data_dir'] = '../data/'
-options['model_path'] = "../result/deeplog/deeplog_last.pth"
+options['model_path'] = "../result/deeplad/deeplad_last.pth"
 options['num_candidates'] = 9
 options['device'] = "cpu"
 
@@ -32,7 +32,7 @@ options['batch_size'] = 2048
 options['input_size'] = 1
 options['hidden_size'] = 64
 options['num_layers'] = 2
-options['num_classes'] = 28
+options['num_classes'] = 36
 
 
 def schedule_jobs():
@@ -76,10 +76,6 @@ def detect_job():
     session_seq_list = session_sampling(log_key_list)  # 采样
 
     # 3. 使用模型进行检测
-    # seq_list = []
-    # with open('/Users/Bleeding/Projects/BJTU/DeepLad/data/HDFS/hdfs_test_abnormal_small', 'r') as f:
-    #     for line in f:
-    #         seq_list.append(line)
     predict(session_seq_list)
 
     """

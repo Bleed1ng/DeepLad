@@ -114,4 +114,4 @@ def session_sampling_from_file(log_file, window_size=10):
     df_seq.to_csv('hdfs/HDFS.log_sequence.csv', index=False)
 
 
-session_sampling_from_file('../data/spell_result/HDFS.log_structured.csv')
+# session_sampling_from_file('../data/spell_result/HDFS.log_structured.csv')

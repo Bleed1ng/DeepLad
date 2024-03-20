@@ -40,7 +40,7 @@ options['model_name'] = "deeplad"
 options['save_dir'] = "../result/deeplad/"
 
 # Predict
-options['model_path'] = "../result/deeplog/deeplad_last.pth"
+options['model_path'] = "../result/deeplog/deeplog_last.pth"
 options['num_candidates'] = 9
 
 seed_everything(seed=1234)
