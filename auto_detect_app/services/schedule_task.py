@@ -55,15 +55,18 @@ def detect_job():
     # 1. 从ES中获取过去一段时间内的日志数据，并且要往前多取10条数据，因为窗口大小为10
     es = ElasticSearchService()
     es_results = es.search_logs()
-    if es_results['hits']['total']['value'] == 0:
+    log_total = es_results['hits']['total']['value']
+    if log_total == 0:
         logger.info("该批次待检测日志查询为空")
         return
+    else:
+        logger.info("该批次待检测日志及关联上下文日志条数为：%d 条" % log_total)
 
     batch_log_list = []
     for hit in es_results['hits']['hits']:
         log_dict = {
             'log_id': hit['_id'],
-            'content': hit['_source']['Content']
+            'content': hit['_source']['content']
         }
         batch_log_list.append(log_dict)
 
@@ -78,7 +81,6 @@ def detect_job():
     # 3. 使用模型进行检测
     predict(session_seq_list)
 
-    """
-    4. 将预测结果存入ES中
-    """
+    # 4. 将预测结果存入ES中
+    # es.update_logs_bulk()
     # logger.info("检测完成")

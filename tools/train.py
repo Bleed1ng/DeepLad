@@ -40,11 +40,11 @@ class Trainer:
             train_logs, train_labels = sliding_window(self.data_dir,
                                                       datatype='train',
                                                       window_size=self.window_size,
-                                                      sample_ratio=0.01)
+                                                      sample_ratio=0.1)
             val_logs, val_labels = sliding_window(self.data_dir,
                                                   datatype='val',
                                                   window_size=self.window_size,
-                                                  sample_ratio=0.00001)
+                                                  sample_ratio=0.0001)
         elif self.sample == 'session_window':
             train_logs, train_labels = session_window(self.data_dir, datatype='train')
             val_logs, val_labels = session_window(self.data_dir, datatype='val')

@@ -28,20 +28,6 @@ def generate(name):
     return hdfs, length
 
 
-def generate_sequence(sequence_list):
-    window_size = 10
-    hdfs = {}
-    length = 0
-    for ln in sequence_list:
-        ln = list(map(lambda n: n - 1, map(int, ln.strip().split())))
-        # 如果列表的长度小于window_size + 1，则在列表的末尾添加 - 1，直到其长度达到window_size + 1。
-        ln = ln + [-1] * (window_size + 1 - len(ln))
-        hdfs[tuple(ln)] = hdfs.get(tuple(ln), 0) + 1
-        length += 1
-    print('Number of sessions({}): {}'.format('log_key_list', len(hdfs)))
-    return hdfs, length
-
-
 class Predictor:
     def __init__(self, model, options):
         self.data_dir = options['data_dir']
@@ -207,8 +193,10 @@ class Predictor:
                     output = model(features=[seq0, seq1], device=self.device)
                     predicted = torch.argsort(output, 1)[0][-self.num_candidates:]
                     if label not in predicted:
-                        print('=====异常blk_id: {}'.format(blk_seq['blk_id']))
+                        print('异常 blk_id: {}'.format(blk_seq['blk_id']))
+                        print('predicted: {}'.format(predicted) + "->" + 'label: {}'.format(label))
                         break
                     else:
                         print('正常：blk_id: {}'.format(blk_seq['blk_id']))
+                        print('predicted: {}'.format(predicted) + "->" + 'label: {}'.format(label))
                         break

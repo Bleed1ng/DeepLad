@@ -64,7 +64,7 @@ def session_sampling(log_list, window='session', window_size=10):
     assert window == 'session', '特定数据集仅适用于会话窗口采样。'
     data_dict = OrderedDict()
     for line in log_list:
-        # 使用正则表达式找到每行中Content列中的blk_id，并将结果存储在blk_id_list中，用set做一下去重
+        # 使用正则表达式找到每行中content列中的blk_id，并将结果存储在blk_id_list中，用set做一下去重
         blk_id_set = set(re.findall(r'(blk_-?\d+)', line['content']))
         for blk_id in blk_id_set:
             if blk_id not in data_dict:
@@ -93,7 +93,7 @@ def session_sampling_from_file(log_file, window_size=10):
     df_logs = pd.read_csv(log_file, engine='c', na_filter=False, memory_map=True)
     data_dict = OrderedDict()
     for idx, row in tqdm(df_logs.iterrows(), desc='Sampling... ', total=df_logs.shape[0]):
-        # 使用正则表达式找到每行中Content列中的blk_id，并将结果存储在blk_id_list中，用set做一下去重
+        # 使用正则表达式找到每行中content列中的blk_id，并将结果存储在blk_id_list中，用set做一下去重
         blk_id_set = set(re.findall(r'(blk_-?\d+)', row['content']))
         for blk_id in blk_id_set:
             if blk_id not in data_dict:
