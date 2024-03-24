@@ -2,9 +2,11 @@ import os
 import re
 import string
 from datetime import datetime
-from tqdm import tqdm
 
 import pandas as pd
+from tqdm import tqdm
+
+from auto_detect_app.utils import redis_client
 
 
 class LCSObject:
@@ -298,17 +300,28 @@ class LogParser:
         """
         root_node = Node()
         log_key_list = []
-        # 从result_dir中加载已有的模版（如有）
         log_cluster_list = []
-        log_templates_file = os.path.join(self.savePath, 'HDFS.log_templates.csv')
-        if os.path.exists(log_templates_file):
-            df_event = pd.read_csv(log_templates_file)
-            for idx, row in df_event.iterrows():
-                log_cluster = LogCluster(log_key=row['log_key'],
-                                         log_template=row['log_template'].split(),
-                                         log_id_list=[])
-                self.addSeqToPrefixTree(root_node, log_cluster)  # 将现有的日志模版存入前缀树
-                log_cluster_list.append(log_cluster)
+        # 从文件中加载已有的模版
+        # self.savePath = '../data/spell_result/'
+        # log_templates_file = os.path.join(self.savePath, 'HDFS.log_templates.csv')
+        # if os.path.exists(log_templates_file):
+        #     df_event = pd.read_csv(log_templates_file)
+        #     for idx, row in df_event.iterrows():
+        #         log_cluster = LogCluster(log_key=row['log_key'],
+        #                                  log_template=row['log_template'].split(),
+        #                                  log_id_list=[])
+        #         self.addSeqToPrefixTree(root_node, log_cluster)  # 将现有的日志模版存入前缀树
+        #         log_cluster_list.append(log_cluster)
+
+        # 从Redis中加载已有的模版（如有）
+        redis = redis_client.RedisClient()
+        log_template_list = redis.get_parse_result()
+        for log_key, log_template in log_template_list.items():
+            log_cluster = LogCluster(log_key=int(log_key.split('_')[-1]),
+                                     log_template=log_template.split(),
+                                     log_id_list=[])
+            self.addSeqToPrefixTree(root_node, log_cluster)
+            log_cluster_list.append(log_cluster)
 
         for line in batch_log_list:
             log_id = line['log_id']
@@ -348,6 +361,8 @@ class LogParser:
             if match_cluster:
                 match_cluster.log_id_list.append(log_id)
                 match_cluster.size = len(match_cluster.log_id_list)
+                # 同时存入Redis
+                redis.set('log_key_' + str(match_cluster.log_key), ' '.join(match_cluster.log_template))
 
             # 将解析完的日志键序列存入log_key_list
             log_dict = {

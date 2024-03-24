@@ -50,7 +50,9 @@ class ElasticSearchService:
         res = self.es.update(index=index, id=doc_id, body=body)
         return res['result']
 
-    def update_logs_bulk(self, index, doc_ids):
+    def update_logs_bulk(self, doc_ids):
+        index = 'hdfs_2k_sample_logs_*'
+
         def generate_bulk_data():
             for doc_id in doc_ids:
                 # 根据索引名称前缀"xxx_index_*"和文档的"_id"查询出对应的索引名称"_index"
@@ -79,5 +81,4 @@ class ElasticSearchService:
 # main方法测试
 if __name__ == '__main__':
     es = ElasticSearchService()
-    es.update_logs_bulk('hdfs_2k_sample_logs_*',
-                        ['2IzOX44BFKwXE7K_69ue', 'aYzOX44BFKwXE7K_69ue'])
+    es.update_logs_bulk(['2IzOX44BFKwXE7K_69ue', 'aYzOX44BFKwXE7K_69ue'])
